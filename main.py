@@ -4,18 +4,21 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 import os
 from dotenv import load_dotenv
-import pymysql
-import mysql.connector
+
+
+load_dotenv(override=True)
+
+
+app = Flask(__name__)
 
 
 # Secure Credentials 
-load_dotenv()
 username = os.getenv("USERNAME")
 password = os.getenv("PASSWORD")
 secret_key = os.getenv("SECRET_KEY")
 
-app = Flask(__name__)
-app.config["SQLALCHEMY_DATABASE_URI"] = f"mysql+pymysql://root:{password}@localhost/EHR_DB_MODEL"
+
+app.config["SQLALCHEMY_DATABASE_URI"] = f"mysql+pymysql://{username}:{password}@localhost/EHR_DB_MODEL"
 app.config['SECRET_KEY'] = secret_key
 db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
