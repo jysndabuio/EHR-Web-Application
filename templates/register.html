@@ -6,6 +6,9 @@
   <title>Register</title>
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/js/all.min.js"></script>
+  
 </head>
 <body>
 
@@ -13,95 +16,124 @@
   <h1 class="text-center">Create an Account</h1>
   <p class="text-center">Please fill in the details to register.</p>
 
-  <div class="row">
-    <div class="col-md-6">
-      <form action="/register" method="POST">
-        <div class="form-group">
-          <label for="username">Username</label>
-          <input type="text" class="form-control" id="username" name="username" required>
-        </div>
+  <form action="{{ url_for('register') }}" method="POST">
+    {{ form.hidden_tag() }}
 
-        <div class="form-group">
-          <label for="password">Password</label>
-          <input type="password" class="form-control" id="password" name="password" required>
-        </div>
-
-        <div class="form-group">
-          <label for="firstname">First Name</label>
-          <input type="text" class="form-control" id="firstname" name="firstname" required>
-        </div>
-
-        <div class="form-group">
-          <label for="lastname">Last Name</label>
-          <input type="text" class="form-control" id="lastname" name="lastname" required>
-        </div>
-
-        <div class="form-group">
-          <label for="email">Email</label>
-          <input type="email" class="form-control" id="email" name="email" required>
-        </div>
-
-        <div class="form-group">
-          <label for="role">Role</label>
-          <select class="form-control" id="role" name="role" required>
-            <option value="" disabled selected>Select your role</option>
-            <option value="patient">Patient</option>
-            <option value="doctor">Doctor</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label for="phone">Phone Number</label>
-          <input type="tel" class="form-control" id="phone" name="phone" required>
-        </div>
+    <div class="form-group">
+      <label for="username">Username</label>
+      {{ form.username(class="form-control", id="username") }}
+      {% for error in form.username.errors %}
+        <div class="text-danger">{{ error }}</div>
+      {% endfor %}
     </div>
 
-    <div class="col-md-6">
-        <div class="form-group">
-          <label for="street">House Number, Street</label>
-          <input type="text" class="form-control" id="street" name="street" required>
-        </div>
-
-        <div class="form-group">
-          <label for="city">City</label>
-          <input type="text" class="form-control" id="city" name="city" required>
-        </div>
-
-        <div class="form-group">
-          <label for="postal">Postal Code</label>
-          <input type="text" class="form-control" id="postal" name="postal" required>
-        </div>
-
-        <div class="form-group">
-          <label for="control-number">Control Number (for Patients only)</label>
-          <input type="text" class="form-control" id="control-number" name="control_number">
-          <small class="form-text text-muted">Enter the control number provided by the hospital. Leave blank if registering as a doctor.</small>
-        </div>
-
-        <div class="form-group">
-          <label for="security-question">Security Question</label>
-          <select class="form-control" id="security-question" name="security_question" required>
-            <option value="" disabled selected>Select a security question</option>
-            <option value="pet_name">What is the name of your first pet?</option>
-            <option value="mother_maiden">What is your mother's maiden name?</option>
-            <option value="favorite_color">What is your favorite color?</option>
-            <option value="city_born">What city were you born in?</option>
-            <option value="high_school">What high school did you attend?</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label for="security-answer">Answer</label>
-          <input type="text" class="form-control" id="security-answer" name="security_answer" required>
-        </div>
+    <div class="form-group">
+      <label for="firstname">First Name</label>
+      {{ form.firstname(class="form-control", id="firstname") }}
+      {% for error in form.firstname.errors %}
+        <div class="text-danger">{{ error }}</div>
+      {% endfor %}
     </div>
-  </div>
 
-  <div class="text-center">
-    <button type="submit" class="btn btn-primary mt-3">Register</button>
-  </div>
-  <p class="text-center">Already have an account? <a href="/login">Login here</a></p>
+    <div class="form-group">
+      <label for="lastname">Last Name</label>
+      {{ form.lastname(class="form-control", id="lastname") }}
+      {% for error in form.lastname.errors %}
+        <div class="text-danger">{{ error }}</div>
+      {% endfor %}
+    </div>
+
+    <div class="form-group">
+      <label for="email">Email</label>
+      {{ form.email(class="form-control", id="email") }}
+      {% for error in form.email.errors %}
+        <div class="text-danger">{{ error }}</div>
+      {% endfor %}
+    </div>
+
+    <div class="form-group">
+      <label for="role">Role</label>
+      {{ form.role(class="form-control", id="role") }}
+      {% for error in form.role.errors %}
+        <div class="text-danger">{{ error }}</div>
+      {% endfor %}
+    </div>
+
+    <div class="form-group">
+      <label for="phone">Phone Number</label>
+      {{ form.phone(class="form-control", id="phone") }}
+      {% for error in form.phone.errors %}
+        <div class="text-danger">{{ error }}</div>
+      {% endfor %}
+    </div>
+
+    <div class="form-group">
+      <label for="street">House Number, Street</label>
+      {{ form.street(class="form-control", id="street") }}
+      {% for error in form.street.errors %}
+        <div class="text-danger">{{ error }}</div>
+      {% endfor %}
+    </div>
+
+    <div class="form-group">
+      <label for="city">City</label>
+      {{ form.city(class="form-control", id="city") }}
+      {% for error in form.city.errors %}
+        <div class="text-danger">{{ error }}</div>
+      {% endfor %}
+    </div>
+
+    <div class="form-group">
+      <label for="postal">Postal Code</label>
+      {{ form.postal(class="form-control", id="postal") }}
+      {% for error in form.postal.errors %}
+        <div class="text-danger">{{ error }}</div>
+      {% endfor %}
+    </div>
+
+    <div class="form-group">
+      <label for="control_number">Control Number</label>
+      {{ form.control_number(class="form-control", id="control_number") }}
+      {% for error in form.control_number.errors %}
+        <div class="text-danger">{{ error }}</div>
+      {% endfor %}
+    </div>
+
+    <div class="form-group">
+      <label for="security_question">Security Question</label>
+      {{ form.security_question(class="form-control", id="security_question") }}
+      {% for error in form.security_question.errors %}
+        <div class="text-danger">{{ error }}</div>
+      {% endfor %}
+    </div>
+
+    <div class="form-group">
+      <label for="security_answer">Answer</label>
+      {{ form.security_answer(class="form-control", id="security_answer") }}
+      {% for error in form.security_answer.errors %}
+        <div class="text-danger">{{ error }}</div>
+      {% endfor %}
+    </div>
+
+    <div class="form-group">
+      <label for="password">Password</label>
+      {{ form.password(class="form-control", id="password") }}
+      {% for error in form.password.errors %}
+        <div class="text-danger">{{ error }}</div>
+      {% endfor %}
+    </div>
+
+    <div class="form-group">
+      <label for="confirm_password">Confirm Password</label>
+      {{ form.confirm_password(class="form-control", id="confirm_password") }}
+      {% for error in form.confirm_password.errors %}
+        <div class="text-danger">{{ error }}</div>
+      {% endfor %}
+    </div>
+
+    <button type="submit" class="btn btn-primary btn-block">{{ form.submit.label }}</button>
+  </form>
 </div>
-
+  <script src="{{ url_for('static', filename='js/register.js') }}"></script>
 </body>
 </html>
