@@ -1,12 +1,12 @@
 # forms.py
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SelectField, TelField, SubmitField
+from wtforms import StringField, PasswordField, SelectField, TelField, SubmitField, HiddenField, EmailField
 from wtforms.validators import DataRequired, Email, EqualTo, Length, Regexp
 
 class RegisterForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired()])
     email = StringField('Email', validators=[DataRequired(), Email()])
-    role = SelectField('Role', choices=[('patient', 'Patient'), ('doctor', 'Doctor')], validators=[DataRequired()])
+    role = HiddenField(default='patient')  # Set role as hidden with default "patient"
     firstname = StringField('First Name', validators=[DataRequired()])
     lastname = StringField('Last Name', validators=[DataRequired()])
     phone = TelField('Phone Number', validators=[DataRequired()])
@@ -33,3 +33,8 @@ class RegisterForm(FlaskForm):
         EqualTo('password', message="Passwords must match")
     ])
     submit = SubmitField('Register')
+
+
+class PasswordResetForm(FlaskForm):
+    email = EmailField('Email', validators=[DataRequired(), Email()])
+    submit = SubmitField('Reset Password')
