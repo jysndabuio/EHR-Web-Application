@@ -1,48 +1,50 @@
-*{
-    box-sizing: border-box;
+body
+{
+background:#e6e6ff;
+font-family: 'Encode Sans', sans-serif;
 }
-body{
-    margin: 0;
-    background-color: #f0f8ff; /* Light blue background */
+/* navigation bar */
+#scanfcode
+{
+border-radius:0px;
+background:#fff;
+padding:10px;
+font-size:17px;
 }
-header{
-    background-color: hsl(0, 0%, 86%);
-    text-align: center;
-    padding: 25px;
+/* logo or main heading */
+#logo
+{
+font-size:20px;
+font-weight:bolder;
+color:#00004d;
+letter-spacing:2px;
 }
-.navbar{
-    background-color: hsl(0, 0%, 15%);
-    height: 50px;
+/* navigation links*/
+#link a
+{
+color:#01325d;
+margin:0 20px 0 10px;
+letter-spacing:1.5px;
 }
-aside{
-    width: 20%;
-    float: left;
-    padding: 10px;
+/* navigation link with right border */
+#first-link
+{
+padding-right:6px;
+border-right:solid 1px #ccc;
 }
-section{
-    width: 40%;
-    float: left;
-    padding: 10px;
+/* sign up link button and toggle button */
+#button-link ,#toogle-button
+{
+color:#f2f2f2;
+border-style: solid;
+border-width: 1px;
+border-color: rgba(0,0,0,.2);
+border-radius: 2px;
+background-color: #fa6a48;
+line-height: 17px;
 }
-article{
-    width: 40%;
-    float: left;
-    padding: 10px;
-}
-footer{
-    display: block;
-    clear: both;
-    background-color: hsl(0, 0%, 86%);
-    text-align: center;
-    padding: 25px;
-}
-@media screen and (max-width:600px){
-    aside, section, article{
-        width: 100%;
-    }
+#button-link a
+{
+color:#f2f2f2;
 }
 
-.btn-primary {
-    background-color: #007bff; /* Custom blue for buttons */
-  }
-  
