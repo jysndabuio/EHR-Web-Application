@@ -4,132 +4,147 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Patient Registration</title>
-  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
 <body>
 
-<div class="container my-5">
-  <h1 class="text-center">Patient Registration</h1>
-  <p class="text-center">Please fill in the details to create your patient account.</p>
+<div class="container" mt-5>
+  <h1 class="text-center">Doctor Registration</h1>
+  <p class="text-center">Please fill in the details to create your account at MedCare.</p>
 
   <form action="{{ url_for('main.register') }}" method="POST">
     {{ form.hidden_tag() }}
 
-    <div class="form-group">
-      <label for="username">Username</label>
-      {{ form.username(class="form-control", id="username") }}
-      {% for error in form.username.errors %}
-        <div class="text-danger">{{ error }}</div>
-      {% endfor %}
-    </div>
+    <div class="row">
+      <div class="col-md-6">
+        <div class="form-group">
+          <label for="username">Username</label>
+          {{ form.username(class="form-control", id="username") }}
+          {% for error in form.username.errors %}
+            <div class="text-danger">{{ error }}</div>
+          {% endfor %}
+        </div>
+    
+        <div class="form-group">
+          <label for="firstname">First Name</label>
+          {{ form.firstname(class="form-control", id="firstname") }}
+          {% for error in form.firstname.errors %}
+            <div class="text-danger">{{ error }}</div>
+          {% endfor %}
+        </div>
+    
+        <div class="form-group">
+          <label for="lastname">Last Name</label>
+          {{ form.lastname(class="form-control", id="lastname") }}
+          {% for error in form.lastname.errors %}
+            <div class="text-danger">{{ error }}</div>
+          {% endfor %}
+        </div>
+    
+        <div class="form-group">
+          <label for="email">Email</label>
+          {{ form.email(class="form-control", id="email") }}
+          {% for error in form.email.errors %}
+            <div class="text-danger">{{ error }}</div>
+          {% endfor %}
+        </div>
+    
+        <div class="form-group">
+          <label for="contact_number">Contact Number</label>
+          {{ form.contact_number(class="form-control", id="contact_number") }}
+          {% for error in form.contact_number.errors %}
+            <div class="text-danger">{{ error }}</div>
+          {% endfor %}
+        </div>
+    
+        <div class="form-group">
+          <label for="gender">Gender:</label>
+          <div>
+            {% for option in form.gender %}
+              <div class="form-check form-check-inline">
+                {{ option(class='form-check-input') }}
+                {{ option.label(class='form-check-label') }}
+              </div>
+            {% endfor %}
+          </div>
+          {% for error in form.gender.errors %}
+            <div class="text-danger">{{ error }}</div>
+          {% endfor %}
+        </div>
+    
+        <div class="form-group">
+          <label for="age">Age:</label>
+          {{ form.age(class="form-control", id="age") }}
+          {% for error in form.age.errors %}
+            <div class="text-danger">{{ error }}</div>
+          {% endfor %}
+        </div>
+      </div>
 
-    <div class="form-group">
-      <label for="firstname">First Name</label>
-      {{ form.firstname(class="form-control", id="firstname") }}
-      {% for error in form.firstname.errors %}
-        <div class="text-danger">{{ error }}</div>
-      {% endfor %}
-    </div>
+      <div class="col-md-6">
+        <div class="form-group">
+          <label for="id_card_number">MedCare ID Card Number</label>
+          {{ form.id_card_number(class="form-control", id="id_card_number") }}
+          <small class="form-text text-muted">Enter your 11 digit MediCare ID number.</small>
+          {% for error in form.id_card_number.errors %}
+            <div class="text-danger">{{ error }}</div>
+          {% endfor %}
+        </div>
+    
+        <div class="form-group">
+          <label for="license_number">Professional License Number</label>
+          {{ form.license_number(class="form-control", id="license_number") }}
+          {% for error in form.license_number.errors %}
+            <div class="text-danger">{{ error }}</div>
+          {% endfor %}
+        </div>
+    
+        <div class="form-group">
+          <label for="home_address">Complete Home Address</label>
+          {{ form.home_address(class="form-control", id="home_address") }}
+          {% for error in form.home_address.errors %}
+            <div class="text-danger">{{ error }}</div>
+          {% endfor %}
+        </div>
+    
+        <div class="form-group">
+          <label for="password">Password</label>
+          {{ form.password(class="form-control", id="password") }}
+          <small class="form-text text-muted">
+            Password must be at least 8 characters long.<br>
+            Password must contain at least one uppercase letter and one number.
+          </small>
+          {% for error in form.password.errors %}
+            <div class="text-danger">{{ error }}</div>
+          {% endfor %}
+          <!-- Display password strength -->
+          <div id="password-strength" class="mt-2"></div>
+        </div>
+    
+        <div class="form-group">
+          <label for="confirm_password">Confirm Password</label>
+          {{ form.confirm_password(class="form-control", id="confirm_password") }}
+          {% for error in form.confirm_password.errors %}
+            <div class="text-danger">{{ error }}</div>
+          {% endfor %}
+          <!-- Display password match message -->
+          <div id="password-match" class="mt-2"></div>
+        </div>
+      </div>
+    </div>   
 
-    <div class="form-group">
-      <label for="lastname">Last Name</label>
-      {{ form.lastname(class="form-control", id="lastname") }}
-      {% for error in form.lastname.errors %}
-        <div class="text-danger">{{ error }}</div>
-      {% endfor %}
+    <div class="row">
+      <div class="col-md-12">
+        <button type="submit" class="btn btn-primary btn-block">{{ form.submit.label }}</button>
+      </div>
     </div>
-
-    <div class="form-group">
-      <label for="email">Email</label>
-      {{ form.email(class="form-control", id="email") }}
-      {% for error in form.email.errors %}
-        <div class="text-danger">{{ error }}</div>
-      {% endfor %}
-    </div>
-
-    <div class="form-group">
-      <label for="phone">Phone Number</label>
-      {{ form.phone(class="form-control", id="phone") }}
-      {% for error in form.phone.errors %}
-        <div class="text-danger">{{ error }}</div>
-      {% endfor %}
-    </div>
-
-    <div class="form-group">
-      <label for="street">House Number, Street</label>
-      {{ form.street(class="form-control", id="street") }}
-      {% for error in form.street.errors %}
-        <div class="text-danger">{{ error }}</div>
-      {% endfor %}
-    </div>
-
-    <div class="form-group">
-      <label for="city">City</label>
-      {{ form.city(class="form-control", id="city") }}
-      {% for error in form.city.errors %}
-        <div class="text-danger">{{ error }}</div>
-      {% endfor %}
-    </div>
-
-    <div class="form-group">
-      <label for="postal">Postal Code</label>
-      {{ form.postal(class="form-control", id="postal") }}
-      {% for error in form.postal.errors %}
-        <div class="text-danger">{{ error }}</div>
-      {% endfor %}
-    </div>
-
-    <div class="form-group">
-      <label for="control_number">Control Number</label>
-      {{ form.control_number(class="form-control", id="control_number") }}
-      {% for error in form.control_number.errors %}
-        <div class="text-danger">{{ error }}</div>
-      {% endfor %}
-    </div>
-
-    <div class="form-group">
-      <label for="security_question">Security Question</label>
-      {{ form.security_question(class="form-control", id="security_question") }}
-      {% for error in form.security_question.errors %}
-        <div class="text-danger">{{ error }}</div>
-      {% endfor %}
-    </div>
-
-    <div class="form-group">
-      <label for="security_answer">Answer</label>
-      {{ form.security_answer(class="form-control", id="security_answer") }}
-      {% for error in form.security_answer.errors %}
-        <div class="text-danger">{{ error }}</div>
-      {% endfor %}
-    </div>
-
-    <div class="form-group">
-      <label for="password">Password</label>
-      {{ form.password(class="form-control", id="password") }}
-      {% for error in form.password.errors %}
-        <div class="text-danger">{{ error }}</div>
-      {% endfor %}
-      <!-- Display password strength -->
-      <div id="password-strength" class="mt-2"></div>
-    </div>
-
-    <div class="form-group">
-      <label for="confirm_password">Confirm Password</label>
-      {{ form.confirm_password(class="form-control", id="confirm_password") }}
-      {% for error in form.confirm_password.errors %}
-        <div class="text-danger">{{ error }}</div>
-      {% endfor %}
-      <!-- Display password match message -->
-      <div id="password-match" class="mt-2"></div>
-    </div>
-
-    <button type="submit" class="btn btn-primary btn-block">{{ form.submit.label }}</button>
   </form>
 </div>
 
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/js/all.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.0.7/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 <script src="{{ url_for('static', filename='js/register.js') }}"></script>
 </body>
 </html>
