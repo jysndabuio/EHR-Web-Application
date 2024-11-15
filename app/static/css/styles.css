@@ -1,8 +1,7 @@
-body
-{
-background:#e6e6ff;
-font-family: 'Encode Sans', sans-serif;
+body{
+background-color:  rgba(237, 232, 220, 0.8)
 }
+
 /* navigation bar */
 #scanfcode
 {

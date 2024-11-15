@@ -16,7 +16,10 @@ class RegisterForm(FlaskForm):
             ('other', 'Other')
     ], validators=[DataRequired()])
     contact_number=IntegerField(validators=[DataRequired()])
-    id_card_number = IntegerField('ID number', validators=[DataRequired(), NumberRange(min=11, max=11, message='Please provide your 11 digit identification card number')])
+    id_card_number = StringField('ID number', validators=[
+        DataRequired(), 
+        Regexp(r'^\d{11}$', message='Please provide your 11-digit identification card number')
+    ])
     license_number=IntegerField('License Number', validators=[DataRequired()])
     home_address=StringField('Complete Home Adress', validators=[DataRequired()]) 
     password = PasswordField('Password', validators=[

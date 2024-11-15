@@ -33,7 +33,7 @@ def login():
     
 
     role = request.args.get('role')
-    if not role or role not in ['admin', 'doctor', 'patient']:
+    if not role or role not in ['admin', 'doctor']:
         flash("Invalid role selected. Please select a role.")
         return redirect(url_for('main.index'))
 
@@ -53,7 +53,7 @@ def login():
 @bp.route('/register', methods=['GET', 'POST'])
 def register():
     form = RegisterForm()
-    form.role.data = 'patient'  # Pre-set the role as "patient"
+    form.role.data = 'doctor'  # Pre-set the role as "patient"
 
     if form.validate_on_submit():
         # Create a new User object with role set to "patient"
@@ -64,20 +64,19 @@ def register():
             role=form.role.data,
             firstname=form.firstname.data,
             lastname=form.lastname.data,
-            phone=form.phone.data,
-            street=form.street.data,
-            city=form.city.data,
-            postal=form.postal.data,
-            control_number=form.control_number.data,
-            security_question=form.security_question.data,
-            security_answer=form.security_answer.data
+            contact_number=form.contact_number.data,
+            age=form.age.data,
+            gender=form.gender.data,
+            id_card_number=form.id_card_number.data,
+            license_number=form.license_number.data,
+            home_address=form.home_address.data
         )
 
         db.session.add(new_user)
         db.session.commit()
 
         flash('Registration successful! Please log in.', 'success')
-        return redirect(url_for('main.login', role='patient'))
+        return redirect(url_for('main.login', role='doctor'))
 
     return render_template('register.html', form=form)
 
@@ -96,6 +95,14 @@ def doctor_dashboard():
         flash('Access denied: You do not have permission to view this page.')
         return redirect_dashboard(current_user.role)
     return render_template('doctor_dashboard.html')
+
+@bp.route('/account')
+@login_required
+def account():
+    if current_user.role != 'doctor':
+        flash('Access denied: You do not have permission to view this page.')
+        return redirect_dashboard(current_user.role)
+    return render_template('account.html')
 
 @bp.route('/admin_dashboard')
 @login_required
