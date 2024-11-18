@@ -1,7 +1,7 @@
 # forms.py
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SelectField, TelField, SubmitField, HiddenField, EmailField, IntegerField, RadioField
-from wtforms.validators import DataRequired, Email, EqualTo, Length, Regexp, NumberRange
+from wtforms import StringField, DateField, PasswordField, SelectField, TelField, SubmitField, HiddenField, EmailField, IntegerField, RadioField
+from wtforms.validators import DataRequired, Email, EqualTo, Length, Regexp, NumberRange, Optional
 
 class RegisterForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired()])
@@ -10,6 +10,7 @@ class RegisterForm(FlaskForm):
     firstname = StringField('First Name', validators=[DataRequired()])
     lastname = StringField('Last Name', validators=[DataRequired()])
     age = IntegerField('Age', validators=[DataRequired()])
+    birthday = DateField('Birthday', format='%Y-%m-%d', validators=[Optional()])
     gender = RadioField('M/W/F', choices=[
             ('male', 'Male'), # 'male' is the value, 'Male' is the label
             ('female', 'Female'),

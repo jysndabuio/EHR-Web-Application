@@ -94,6 +94,8 @@ def doctor_dashboard():
     if current_user.role != 'doctor':
         flash('Access denied: You do not have permission to view this page.')
         return redirect_dashboard(current_user.role)
+    
+
     return render_template('doctor_dashboard.html')
 
 @bp.route('/account')
@@ -102,7 +104,9 @@ def account():
     if current_user.role != 'doctor':
         flash('Access denied: You do not have permission to view this page.')
         return redirect_dashboard(current_user.role)
-    return render_template('account.html')
+    
+    user = User.query.get(current_user.id)
+    return render_template('doctor_account.html', user=user)
 
 @bp.route('/admin_dashboard')
 @login_required
@@ -162,3 +166,8 @@ def logout():
     logout_user()
     flash('You have been logged out.')
     return redirect(url_for('main.index'))
+
+@bp.route('/forgotpassword')
+def forgotpassword():
+    return "Test"#
+

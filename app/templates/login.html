@@ -9,6 +9,21 @@
 </head>
 <body>
 
+
+  <!-- Navbar -->
+<nav class="navbar navbar-light" style="background-color: rgb(231, 204, 204); padding: 10px;">
+  <div class="container-fluid d-flex justify-content-between align-items-center">
+    <!-- Return Button -->
+    <button class="btn btn-primary" onclick="window.history.back();">
+      <i class="bi bi-arrow-left"></i> Return
+    </button>
+
+    <!-- Empty div for alignment -->
+    <div style="width: 50px;"></div>
+  </div>
+</nav>
+
+
 <div class="container text-center my-5">
   <h1>Login as {{ role|capitalize }}</h1>
   <p>Please enter your credentials to access the EHR system.</p>
@@ -43,7 +58,8 @@
 
       <!-- Show registration link only if the role is "patient" -->
       {% if role == 'doctor' %}
-        <p class="mt-3">Don't have an account? <a href="{{ url_for('main.register') }}">Register here</a></p>
+        <p class="mt-3">Don't have an account?<br><a href="{{ url_for('main.register') }}">Register here</a></p>
+        <p class="mt-3">Forgot password?<br><a href="{{ url_for('main.forgotpassword') }}">Click here.</a></p>
       {% endif %}
     </div>
   </div>
