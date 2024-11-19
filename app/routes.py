@@ -2,8 +2,8 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_user, logout_user, login_required, current_user
 from flask_mail import Message
 from datetime import datetime
-from .models import User
-from .forms import RegisterForm, PasswordResetForm
+from .models import User, UserEducation
+from .forms import RegisterForm, PasswordResetForm, UserUpdateProfile
 from . import db, bcrypt, mail
 from .utils import verify_password_reset_token, generate_password_reset_token
 
@@ -98,15 +98,62 @@ def doctor_dashboard():
 
     return render_template('doctor_dashboard.html')
 
-@bp.route('/account')
+@bp.route('/account', methods=['GET', 'POST'])
 @login_required
 def account():
     if current_user.role != 'doctor':
         flash('Access denied: You do not have permission to view this page.')
         return redirect_dashboard(current_user.role)
+    user = User.query.get_or_404(current_user.id)
+    education = UserEducation.query.filter_by(user_id=user.id).first
+
+    form = UserUpdateProfile()
+
+    if form.validate_on_submit():
+        new_username = form.username.data
+        new_email = form.email.data
+        new_home_address = form.home_address.data
+        new_med_deg = form.med_deg.data
+        new_med_deg_spec = form.med_deg_spec.data
+        new_board_cert = form.board_cert.data
+        new_license_num = form.license_num.data
+        new_license_issuer = form.license_issuer.data
+        new_license_expiration = form.license_expiration.data
+        new_years_of_experience = form.years_of_experience.data
+        new_password = form.password.data
+        new_confirm_password = form.confirm_password.data
+        new_contact_number = form.contact_number.data
+
+         # Check if the new username already exists (and is not the current username)
+        existing_user = User.query.filter_by(username=new_username).first()
+        if existing_user and existing_user.id != user.id:  # Check if the username is taken by another user
+            flash('Username is already taken. Please choose a different one.', 'danger')
+            return redirect(url_for('doctor_account'))
+
+        # Check if the new email already exists (and is not the current email)
+        existing_email = User.query.filter_by(email=new_email).first()
+        if existing_email and existing_email.id != user.id:  # Ensure the email is not for the same user
+            flash('Email is already in use. Please choose a different one.', 'danger')
+            return redirect(url_for('doctor_account'))
+        
+        user.username = new_username
+        user.email =new_email 
+        user.home_address = new_home_address
+        user.contact_number = new_contact_number
+        education.med_deg = new_med_deg 
+        education.med_deg_spec = new_med_deg_spec 
+        education.board_cert = new_board_cert 
+        education.license_num = new_license_num 
+        education.license_issuer = new_license_issuer
+        education.password = new_password
+        education.license_expiration = new_license_expiration
+        education.years_of_experience = new_years_of_experience
+        
+        db.session.commit()
+        flash('Profile updated successfully!', 'success')
+        return redirect(url_for('doctor_account'))  # Redirect to the profile view
     
-    user = User.query.get(current_user.id)
-    return render_template('doctor_account.html', user=user)
+    return render_template('doctor_account.html', user=user, education=education, form=form)
 
 @bp.route('/admin_dashboard')
 @login_required
