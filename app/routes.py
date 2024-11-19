@@ -104,10 +104,12 @@ def account():
     if current_user.role != 'doctor':
         flash('Access denied: You do not have permission to view this page.')
         return redirect_dashboard(current_user.role)
+    
     user = User.query.get_or_404(current_user.id)
-    education = UserEducation.query.filter_by(user_id=user.id).first
+    education = UserEducation.query.filter_by(user_id=user.id).first()
 
-    form = UserUpdateProfile()
+    # Now pass form_data to the form
+    form = UserUpdateProfile(obj=education)
 
     if form.validate_on_submit():
         new_username = form.username.data
@@ -116,42 +118,62 @@ def account():
         new_med_deg = form.med_deg.data
         new_med_deg_spec = form.med_deg_spec.data
         new_board_cert = form.board_cert.data
-        new_license_num = form.license_num.data
+        new_license_number = form.license_number.data
         new_license_issuer = form.license_issuer.data
         new_license_expiration = form.license_expiration.data
         new_years_of_experience = form.years_of_experience.data
-        new_password = form.password.data
-        new_confirm_password = form.confirm_password.data
         new_contact_number = form.contact_number.data
+        current_password = form.current_password.data
+        new_password = form.password.data
+        confirm_password = form.confirm_password.data
 
          # Check if the new username already exists (and is not the current username)
         existing_user = User.query.filter_by(username=new_username).first()
         if existing_user and existing_user.id != user.id:  # Check if the username is taken by another user
             flash('Username is already taken. Please choose a different one.', 'danger')
-            return redirect(url_for('doctor_account'))
+            return redirect(url_for('main.account'))
 
         # Check if the new email already exists (and is not the current email)
         existing_email = User.query.filter_by(email=new_email).first()
         if existing_email and existing_email.id != user.id:  # Ensure the email is not for the same user
             flash('Email is already in use. Please choose a different one.', 'danger')
-            return redirect(url_for('doctor_account'))
+            return redirect(url_for('main.account'))
         
+        # Update User fields
         user.username = new_username
-        user.email =new_email 
+        user.email = new_email
         user.home_address = new_home_address
         user.contact_number = new_contact_number
-        education.med_deg = new_med_deg 
-        education.med_deg_spec = new_med_deg_spec 
-        education.board_cert = new_board_cert 
-        education.license_num = new_license_num 
-        education.license_issuer = new_license_issuer
-        education.password = new_password
-        education.license_expiration = new_license_expiration
-        education.years_of_experience = new_years_of_experience
+
+        # Update Education fields if applicable
+        if education:
+            education.med_deg = new_med_deg
+            education.med_deg_spec = new_med_deg_spec
+            education.board_cert = new_board_cert
+            education.license_number = new_license_number
+            education.license_issuer = new_license_issuer
+            education.license_expiration = new_license_expiration
+            education.years_of_experience = new_years_of_experience
+        
+         # Conditionally handle password update
+        if current_password or new_password or confirm_password:
+            if not current_user.check_password(current_password):
+                flash('Current password is incorrect.', 'danger')
+                return redirect(url_for('main.account'))
+            if new_password != confirm_password:
+                flash('Passwords do not match.', 'danger')
+                return redirect(url_for('main.account'))
+            elif len(new_password) < 8 or not any(char.isdigit() for char in new_password) or not any(char.isupper() for char in new_password):
+                flash('Password must be at least 8 characters long and contain at least one uppercase letter and one number.', 'danger')
+                return redirect(url_for('main.account'))
+            else:
+                # Use Flask's security utilities to hash the password
+                user.set_password(new_password)  # Ensure `set_password` hashes the password
+                flash('Password updated successfully!', 'success')
         
         db.session.commit()
         flash('Profile updated successfully!', 'success')
-        return redirect(url_for('doctor_account'))  # Redirect to the profile view
+        return redirect(url_for('main.account'))  # Redirect to the profile view
     
     return render_template('doctor_account.html', user=user, education=education, form=form)
 

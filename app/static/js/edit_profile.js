@@ -35,4 +35,13 @@ document.addEventListener("DOMContentLoaded", function () {
   // Attach the cancelChanges function to the global Cancel button
   const cancelButton = document.getElementById('cancel-button');
   cancelButton.addEventListener('click', cancelChanges);
+
+  // Ensure the Save button submits the form
+  const saveButton = document.getElementById('save-button');
+  saveButton.addEventListener('click', function () {
+      const form = saveButton.closest('form'); // Find the closest form element
+      if (form) {
+          form.submit(); // Trigger form submission
+      }
+  });
 });

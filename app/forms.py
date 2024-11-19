@@ -52,19 +52,17 @@ class UserUpdateProfile(FlaskForm):
     ecd_name = StringField('Emergency Contact Name', validators=[Optional()])
     ecd_contact_number = StringField('Emergency Contact Number', validators=[Optional()])
 
-    password = PasswordField('Password', validators=[
-            DataRequired(),
-            Length(min=8, message="Password must be at least 8 characters long"),
-            Regexp(r'^(?=.*[A-Z])(?=.*\d)', message="Password must contain at least one uppercase letter and one number.")
+    current_password = PasswordField('Current Password', validators=[
+        Optional(),  # Current password is optional unless changing the password
     ])
-    new_password = PasswordField('New Password', validators=[
-        DataRequired(),
+    password = PasswordField('New Password', validators=[
+        Optional(),  # New password is optional for profile updates
         Length(min=8, message="Password must be at least 8 characters long"),
         Regexp(r'^(?=.*[A-Z])(?=.*\d)', message="Password must contain at least one uppercase letter and one number.")
     ])
     confirm_password = PasswordField('Confirm Password', validators=[
-            DataRequired(),
-            EqualTo('password', message="Passwords must match")
+        Optional(),
+        EqualTo('password', message="Passwords must match")
     ])
     submit = SubmitField('Register')
 

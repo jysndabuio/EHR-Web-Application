@@ -9,224 +9,232 @@
     Account Settings
   </h4>
 
-  <div class="card overflow-hidden">
-    <div class="row no-gutters row-bordered row-border-light">
+  <form method="POST" action="{{ url_for('main.account') }}">
+    {{ form.hidden_tag() }} <!-- Include CSRF token if Flask-WTF is used -->
 
-      <!-- Sidebar -->
-      <div class="col-md-3 pt-0">
-        <div class="list-group list-group-flush account-settings-links">
-          <a class="list-group-item list-group-item-action active" data-toggle="list" href="#account-general">General</a>
-          <a class="list-group-item list-group-item-action" data-toggle="list" href="#account-change-password">Change Password</a>
-          <a class="list-group-item list-group-item-action" data-toggle="list" href="#account-info">Info</a>
-          <a class="list-group-item list-group-item-action" data-toggle="list" href="#education">Education</a>
+    <div class="card overflow-hidden">
+      <div class="row no-gutters row-bordered row-border-light">
+
+        <!-- Sidebar -->
+        <div class="col-md-3 pt-0">
+          <div class="list-group list-group-flush account-settings-links">
+            <a class="list-group-item list-group-item-action active" data-toggle="list" href="#account-general">General</a>
+            <a class="list-group-item list-group-item-action" data-toggle="list" href="#account-change-password">Change Password</a>
+            <a class="list-group-item list-group-item-action" data-toggle="list" href="#account-info">Info</a>
+            <a class="list-group-item list-group-item-action" data-toggle="list" href="#education">Education</a>
+          </div>
         </div>
-      </div>
-      <!-- End Sidebar -->
+        <!-- End Sidebar -->
 
-      <!-- Main Content -->
-      <div class="col-md-9">
-        <div class="tab-content">
+        <!-- Main Content -->
+        <div class="col-md-9">
+          <div class="tab-content">
 
-          <!-- General Tab -->
-          <div class="tab-pane fade active show" id="account-general">
-            <div class="card-body media align-items-center">
-              <img src="https://bootdey.com/img/Content/avatar/avatar1.png" alt="Profile" class="d-block ui-w-80">
-              <div class="media-body ml-4">
-                <label class="btn btn-outline-primary">
-                  Upload New Photo
-                  <input type="file" class="account-settings-fileinput">
-                </label>
-                &nbsp;
-                <button type="button" class="btn btn-default md-btn-flat">Reset</button>
-                <div class="text-light small mt-1">Allowed JPG, GIF, or PNG. Max size of 800K</div>
-              </div>
-            </div>
-            <hr class="border-light m-0">
-
-            <div class="card-body">
-              <div class="form-group">
-                <label class="form-label">Username</label>
-                {{ form.username(class="form-control editable-input", id="username", disabled=True) }}
-                {% for error in form.username.errors %}
-                  <div class="text-danger">{{ error }}</div>
-                {% endfor %}
-              </div>
-              <div class="row g-3">
-                <div class="col-md-6 form-group">
-                  <label class="form-label">Firstname</label>
-                  <input type="text" class="form-control" value="{{ user.firstname }}" disabled>
-                </div>
-                <div class="col-md-6 form-group">
-                  <label class="form-label">Lastname</label>
-                  <input type="text" class="form-control" value="{{ user.lastname }}" disabled>
+            <!-- General Tab -->
+            <div class="tab-pane fade active show" id="account-general">
+              <div class="card-body media align-items-center">
+                <img src="https://bootdey.com/img/Content/avatar/avatar1.png" alt="Profile" class="d-block ui-w-80">
+                <div class="media-body ml-4">
+                  <label class="btn btn-outline-primary">
+                    Upload New Photo
+                    <input type="file" class="account-settings-fileinput">
+                  </label>
+                  &nbsp;
+                  <button type="button" class="btn btn-default md-btn-flat">Reset</button>
+                  <div class="text-light small mt-1">Allowed JPG, GIF, or PNG. Max size of 800K</div>
                 </div>
               </div>
-              <div class="form-group">
-                <label class="form-label">E-mail</label>
-                {{ form.email(class="form-control editable-input", id="email", disabled=True) }}
-                {% for error in form.email.errors %}
-                  <div class="text-danger">{{ error }}</div>
-                {% endfor %}
-              </div>
-              <div class="form-group">
-                <label class="form-label">MedCare Health Services Account Number</label>
-                <input type="text" class="form-control" value="{{ user.id_card_number }}" disabled>
-              </div>
-            </div>
-          </div>
-          <!-- End General Tab -->
+              <hr class="border-light m-0">
 
-          <!-- Change Password Tab -->
-          <div class="tab-pane fade" id="account-change-password">
-            <div class="card-body pb-2">
-                <!-- Current Password -->
+              <div class="card-body">
                 <div class="form-group">
-                    <label class="form-label" for="current-password">Current Password</label>
-                    {{ form.password(class="form-control editable-input", id="current-password", placeholder="Enter current password", disabled=True) }}
-                    {% for error in form.password.errors %}
-                        <div class="text-danger">{{ error }}</div>
-                    {% endfor %}
-                </div>
-
-                <!-- New Password -->
-                <div class="form-group">
-                    <label class="form-label" for="new-password">New Password</label>
-                    {{ form.new_password(class="form-control editable-input", id="new-password", placeholder="Enter new password", disabled=True) }}
-                    {% for error in form.new_password.errors %}
-                        <div class="text-danger">{{ error }}</div>
-                    {% endfor %}
-                </div>
-
-                <!-- Confirm New Password -->
-                <div class="form-group">
-                    <label class="form-label" for="repeat-new-password">Repeat New Password</label>
-                    {{ form.confirm_password(class="form-control editable-input", id="repeat-new-password", placeholder="Confirm new password", disabled=True) }}
-                    {% for error in form.confirm_password.errors %}
-                        <div class="text-danger">{{ error }}</div>
-                    {% endfor %}
-                </div>
-            </div>
-          </div>
-<!-- End Change Password Tab -->
-
-
-          <!-- Info Tab -->
-          <div class="tab-pane fade" id="account-info">
-            <div class="card-body pb-2">
-              <div class="form-group">
-                <label class="form-label">Bio</label>
-                <textarea class="form-control" rows="3" disabled></textarea>
-              </div>
-              <div class="row g-3">
-                <div class="col-md-3 form-group">
-                  <label class="form-label">Birthday</label>
-                  <input type="date" class="form-control" value="{{ user.birthday }}" disabled>
-                </div>
-                <div class="col-md-3 form-group">
-                  <label class="form-label">Age</label>
-                  <input type="text" class="form-control" value="{{ user.age }}" disabled>
-                </div>
-                <div class="col-md-3 form-group">
-                  <label class="form-label">Gender</label>
-                  <input type="text" class="form-control" value="{{ user.gender }}" disabled>
-                </div>
-                <div class="col-md-3 form-group">
-                  <label class="form-label">Country</label>
-                  {{ form.country(class="form-control editable-input", id="country", disabled=True) }}
-                  {% for error in form.country.errors %}
-                  <div class="text-danger">{{ error }}</div>
+                  <label class="form-label">Username</label>
+                  {{ form.username(class="form-control editable-input", id="username", disabled=True) }}
+                  {% for error in form.username.errors %}
+                    <div class="text-danger">{{ error }}</div>
                   {% endfor %}
                 </div>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Phone</label>
-                {{ form.contact_number(class="form-control editable-input", id="contact_number", disabled=True) }}
-                {% for error in form.contact_number.errors %}
-                  <div class="text-danger">{{ error }}</div>
-                {% endfor %}
-              </div>
-              <div class="form-group">
-                <label class="form-label">Home Address</label>
-                {{ form.home_address(class="form-control editable-input", id="home_address", disabled=True) }}
-                {% for error in form.home_address.errors %}
-                  <div class="text-danger">{{ error }}</div>
-                {% endfor %}
-              </div>
-              <h6 class="mt-4">Emergency Contact Details</h6>
-              <div class="row g-3">
+                <div class="row g-3">
                   <div class="col-md-6 form-group">
-                    <label class="form-label">Contact Name</label>
-                    {{ form.ecd_name(class="form-control editable-input", id="ecd_name", disabled=True) }}
-                    {% for error in form.ecd_name.errors %}
-                    <div class="text-danger">{{ error }}</div>
-                    {% endfor %}
+                    <label class="form-label">Firstname</label>
+                    <input type="text" class="form-control" value="{{ user.firstname }}" disabled>
                   </div>
                   <div class="col-md-6 form-group">
-                    <label class="form-label">Contact Number</label>
-                    {{ form.ecd_contact_number(class="form-control editable-input", id="ecd_contact_number", disabled=True) }}
-                    {% for error in form.ecd_contact_number.errors %}
+                    <label class="form-label">Lastname</label>
+                    <input type="text" class="form-control" value="{{ user.lastname }}" disabled>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">E-mail</label>
+                  {{ form.email(class="form-control editable-input", id="email", disabled=True) }}
+                  {% for error in form.email.errors %}
                     <div class="text-danger">{{ error }}</div>
-                    {% endfor %}
+                  {% endfor %}
+                </div>
+                <div class="form-group">
+                  <label class="form-label">MedCare Health Services Account Number</label>
+                  <input type="text" class="form-control" value="{{ user.id_card_number }}" disabled>
+                </div>
+              </div>
+            </div>
+            <!-- End General Tab -->
+
+            <!-- Change Password Tab -->
+            <div class="tab-pane fade" id="account-change-password">
+              <div class="card-body pb-2">
+                  <!-- Current Password -->
+                  <div class="form-group">
+                      <label for="current_password" class="form-label">Current Password</label>
+                      {{ form.current_password(class="form-control editable-input", id="current_password", placeholder="Enter current password", disabled=True) }}
+                      {% for error in form.current_password.errors %}
+                          <div class="text-danger">{{ error }}</div>
+                      {% endfor %}
+                  </div>
+
+                  <!-- New Password -->
+                  <div class="form-group">
+                      <label for="password" class="form-label">New Password</label>
+                      {{ form.password(class="form-control editable-input", id="password", placeholder="Enter new password", disabled=True) }}
+                      {% for error in form.password.errors %}
+                          <div class="text-danger">{{ error }}</div>
+                      {% endfor %}
+                  </div>
+
+                  <!-- Confirm New Password -->
+                  <div class="form-group">
+                      <label for="confirm_password" class="form-label">Confirm New Password</label>
+                      {{ form.confirm_password(class="form-control editable-input", id="confirm_password", placeholder="Confirm new password", disabled=True) }}
+                      {% for error in form.confirm_password.errors %}
+                          <div class="text-danger">{{ error }}</div>
+                      {% endfor %}
+                  </div>
+
+                  <!-- Note about optional password update -->
+                  <div class="form-text text-muted">
+                      To change your password, enter your current password, the new password, and confirm the new password.
                   </div>
               </div>
             </div>
-          </div>
-          <!-- End Info Tab -->
 
-          <!-- Education Tab -->
-          <div class="tab-pane fade" id="education">
-            <div class="card-body pb-2">
-              <div class="form-group">
-                <label class="form-label">Medical Degree</label>
-                {{ form.med_deg(class="form-control editable-input", id="med_deg", disabled=True) }}               
-              </div>
-              <div class="form-group">
-                <label class="form-label">Specialization</label>
-                {{ form.med_deg_spec(class="form-control editable-input", id="med_deg_spec", disabled=True) }}
-              </div>
-              <div class="form-group">
-                <label class="form-label">Board Certifications</label>
-                {{ form.board_cert(class="form-control editable-input", id="board_cert", disabled=True) }}
-              </div>
-              <h6 class="mb-4">License Information</h6>
-              <div class="row g-3">
-                <div class="col-md-4 form-group">
-                  <label class="form-label">License Number</label>
-                  {{ form.license_number(class="form-control editable-input", id="license_number", disabled=True) }}
-                  {% for error in form.license_number.errors %}
-                  <div class="text-danger">{{ error }}</div>
+            <!-- End Change Password Tab -->
+
+
+            <!-- Info Tab -->
+            <div class="tab-pane fade" id="account-info">
+              <div class="card-body pb-2">
+                <div class="form-group">
+                  <label class="form-label">Bio</label>
+                  <textarea class="form-control" rows="3" disabled></textarea>
+                </div>
+                <div class="row g-3">
+                  <div class="col-md-3 form-group">
+                    <label class="form-label">Birthday</label>
+                    <input type="date" class="form-control" value="{{ user.birthday }}" disabled>
+                  </div>
+                  <div class="col-md-3 form-group">
+                    <label class="form-label">Age</label>
+                    <input type="text" class="form-control" value="{{ user.age }}" disabled>
+                  </div>
+                  <div class="col-md-3 form-group">
+                    <label class="form-label">Gender</label>
+                    <input type="text" class="form-control" value="{{ user.gender }}" disabled>
+                  </div>
+                  <div class="col-md-3 form-group">
+                    <label class="form-label">Country</label>
+                    {{ form.country(class="form-control editable-input", id="country", disabled=True) }}
+                    {% for error in form.country.errors %}
+                    <div class="text-danger">{{ error }}</div>
+                    {% endfor %}
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Phone</label>
+                  {{ form.contact_number(class="form-control editable-input", id="contact_number", disabled=True) }}
+                  {% for error in form.contact_number.errors %}
+                    <div class="text-danger">{{ error }}</div>
                   {% endfor %}
                 </div>
-                <div class="col-md-4 form-group">
-                  <label class="form-label">Issuing Authority</label>
-                  {{ form.license_issuer(class="form-control editable-input", id="license_issuer", disabled=True) }}
+                <div class="form-group">
+                  <label class="form-label">Home Address</label>
+                  {{ form.home_address(class="form-control editable-input", id="home_address", disabled=True) }}
+                  {% for error in form.home_address.errors %}
+                    <div class="text-danger">{{ error }}</div>
+                  {% endfor %}
                 </div>
-                <div class="col-md-4 form-group">
-                  <label class="form-label">Expiration Date</label>
-                  {{ form.license_expiration(class="form-control editable-input", id="license_expiration", disabled=True) }}
+                <h6 class="mt-4">Emergency Contact Details</h6>
+                <div class="row g-3">
+                    <div class="col-md-6 form-group">
+                      <label class="form-label">Contact Name</label>
+                      {{ form.ecd_name(class="form-control editable-input", id="ecd_name", disabled=True) }}
+                      {% for error in form.ecd_name.errors %}
+                      <div class="text-danger">{{ error }}</div>
+                      {% endfor %}
+                    </div>
+                    <div class="col-md-6 form-group">
+                      <label class="form-label">Contact Number</label>
+                      {{ form.ecd_contact_number(class="form-control editable-input", id="ecd_contact_number", disabled=True) }}
+                      {% for error in form.ecd_contact_number.errors %}
+                      <div class="text-danger">{{ error }}</div>
+                      {% endfor %}
+                    </div>
                 </div>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Years of Experience</label>
-                {{ form.years_of_experience(class="form-control editable-input", id="years_of_experience", disabled=True) }}
               </div>
             </div>
+            <!-- End Info Tab -->
+
+            <!-- Education Tab -->
+            <div class="tab-pane fade" id="education">
+              <div class="card-body pb-2">
+                <div class="form-group">
+                  <label class="form-label">Medical Degree</label>
+                  {{ form.med_deg(class="form-control editable-input", id="med_deg", disabled=True) }}               
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Specialization</label>
+                  {{ form.med_deg_spec(class="form-control editable-input", id="med_deg_spec", disabled=True) }}
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Board Certifications</label>
+                  {{ form.board_cert(class="form-control editable-input", id="board_cert", disabled=True) }}
+                </div>
+                <h6 class="mb-4">License Information</h6>
+                <div class="row g-3">
+                  <div class="col-md-4 form-group">
+                    <label class="form-label">License Number</label>
+                    {{ form.license_number(class="form-control editable-input", id="license_number", disabled=True) }}
+                    {% for error in form.license_number.errors %}
+                    <div class="text-danger">{{ error }}</div>
+                    {% endfor %}
+                  </div>
+                  <div class="col-md-4 form-group">
+                    <label class="form-label">Issuing Authority</label>
+                    {{ form.license_issuer(class="form-control editable-input", id="license_issuer", disabled=True) }}
+                  </div>
+                  <div class="col-md-4 form-group">
+                    <label class="form-label">Expiration Date</label>
+                    {{ form.license_expiration(class="form-control editable-input", id="license_expiration", disabled=True) }}
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Years of Experience</label>
+                  {{ form.years_of_experience(class="form-control editable-input", id="years_of_experience", disabled=True) }}
+                </div>
+              </div>
+            </div>
+            <!-- End Education Tab -->
+
           </div>
-          <!-- End Education Tab -->
-
         </div>
-      </div>
-      <!-- End Main Content -->
+        <!-- End Main Content -->
 
+      </div>
     </div>
-  </div>
 
-  <div class="text-right mt-3">
-    <button type="button" id="edit-button" class="btn btn-primary">Edit</button>
-    <button type="submit" id="save-button" class="btn btn-success" style="display:none;">Save Changes</button>
-    <button type="button" id="cancel-button" class="btn btn-danger" style="display:none;" onclick="cancelChanges()">Cancel</button>
-</div>
-
-
+    <div class="text-right mt-3">
+      <button type="button" id="edit-button" class="btn btn-primary">Edit</button>
+      <button type="submit" id="save-button" class="btn btn-success" style="display:none;">Save Changes</button>
+      <button type="button" id="cancel-button" class="btn btn-danger" style="display:none;" onclick="cancelChanges()">Cancel</button>
+    </div>
+  </form>
 </div>
 {% endblock %}

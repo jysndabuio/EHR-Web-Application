@@ -48,7 +48,7 @@ class UserEducation(UserMixin, db.Model):
     med_deg = db.Column(db.String(50), nullable=True)
     med_deg_spec = db.Column(db.String(50), nullable=True)
     board_cert = db.Column(db.String(50), nullable=True)
-    license_num = db.Column(db.String(50), nullable=False)
+    license_number = db.Column(db.String(50), nullable=False)
     license_issuer = db.Column(db.String(50), nullable=True)
     license_expiration = db.Column(db.String(50), nullable=True)
     years_of_experience = db.Column(db.String(50), nullable=True)
