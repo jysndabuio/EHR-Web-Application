@@ -1,0 +1,41 @@
+<!-- templates/view_patient.html -->
+
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-5">
+    <h2>Patient Details</h2>
+    <div class="card mb-3">
+        <div class="card-header">
+            {{ patient.firstname }} {{ patient.lastname }}
+            <a href="{{ url_for('main.edit_patient', patient_id=patient.id) }}" class="btn btn-primary btn-sm float-right">Edit</a>
+        </div>
+        <div class="card-body">
+            <p><strong>Patient ID:</strong> {{ patient.patient_id }}</p>
+            <p><strong>Age:</strong> {{ patient.age }}</p>
+            <p><strong>Gender:</strong> {{ patient.gender }}</p>
+            <p><strong>Contact Number:</strong> {{ patient.contact_number }}</p>
+            <p><strong>Home Address:</strong> {{ patient.home_address }}</p>
+            <p><strong>Emergency Contact:</strong> {{ patient.ecd_name }} ({{ patient.ecd_contact_number }})</p>
+        </div>
+    </div>
+
+    <h3>Visits</h3>
+    {% for visit in patient.visits %}
+    <div class="card mb-3">
+        <div class="card-header">
+            Visit on {{ visit.visit_date.strftime('%Y-%m-%d') }}
+            <a href="{{ url_for('main.view_visit', visit_id=visit.id) }}" class="btn btn-info btn-sm float-right">View Details</a>
+        </div>
+        <div class="card-body">
+            <p><strong>Visit Type:</strong> {{ visit.visit_type }}</p>
+            <p><strong>Notes:</strong> {{ visit.notes }}</p>
+        </div>
+    </div>
+    {% else %}
+    <p>No visits recorded.</p>
+    {% endfor %}
+
+    <!-- Add Visit Button -->
+    <a href="{{ url_for('main.add_visit', patient_id=patient.id) }}" class="btn btn-primary mt-3">Add New Visit</a>
+</div>
+{% endblock %}

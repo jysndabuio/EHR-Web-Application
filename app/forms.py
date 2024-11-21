@@ -2,6 +2,8 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField,DateTimeField,TextAreaField, DateField, PasswordField, SelectField, TelField, SubmitField, HiddenField, EmailField, IntegerField, RadioField
 from wtforms.validators import DataRequired, Email, EqualTo, Length, Regexp, NumberRange, Optional
+from datetime import date
+
 
 class RegisterForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired(), Length(min=4, max=20)])
@@ -168,3 +170,9 @@ class AppointmentForm(FlaskForm):
     end = DateTimeField('End Time', validators=[Optional()], format='%Y-%m-%d %H:%M:%S')
     status = SelectField('Status', choices=[('proposed', 'Proposed'), ('pending', 'Pending'), ('booked', 'Booked'), ('arrived', 'Arrived'), ('fulfilled', 'Fulfilled'), ('cancelled', 'Cancelled'), ('noshow', 'No Show')], validators=[Optional()])
     reason = TextAreaField('Reason', validators=[Optional(), Length(max=255)])
+
+class AddVisitForm(FlaskForm):
+    visit_type = SelectField('Visit Type', choices=[('checkup', 'Checkup'), ('emergency', 'Emergency')], validators=[DataRequired()])
+    visit_date = DateField('Visit Date', default=date.today, validators=[DataRequired()])
+    notes = TextAreaField('Notes', validators=[Length(max=500)])
+    submit = SubmitField('Add Visit')

@@ -1,0 +1,25 @@
+<!-- templates/edit_visit.html -->
+
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-5">
+    <h2>Edit Visit Information</h2>
+    <form method="POST">
+        {{ form.hidden_tag() }}
+        <div class="form-group">
+            {{ form.visit_date.label(class="form-label") }}
+            {{ form.visit_date(class="form-control") }}
+        </div>
+        <div class="form-group">
+            {{ form.visit_type.label(class="form-label") }}
+            {{ form.visit_type(class="form-control") }}
+        </div>
+        <div class="form-group">
+            {{ form.notes.label(class="form-label") }}
+            {{ form.notes(class="form-control") }}
+        </div>
+        <button type="submit" class="btn btn-success">Save Changes</button>
+        <a href="{{ url_for('main.view_visit', visit_id=visit.id) }}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}

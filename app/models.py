@@ -124,7 +124,7 @@ class Patient(UserMixin, db.Model):
     observations = relationship('Observation', back_populates='patient', lazy='dynamic')
     medications = relationship('MedicationStatement', back_populates='patient', lazy='dynamic')
     appointments = relationship('Appointment', back_populates='patient', lazy='dynamic')
-    visits = relationship('Visit', back_populates='patient', lazy='dynamic')
+    visits = relationship('Visit', back_populates='patient')
 
     @staticmethod
     def generate_patient_id(session):
@@ -181,130 +181,140 @@ class Visit(UserMixin, db.Model):
     # Relationships
     patient = relationship('Patient', back_populates='visits')
     doctor = relationship('User', back_populates='visits')
-    observations = relationship('Observation', back_populates='visits', lazy='dynamic')
-    procedures = relationship('Procedure', back_populates='visits', lazy='dynamic')
-    medications = relationship('MedicationStatement', back_populates='visits', lazy='dynamic')
-    immunizations = relationship('Immunization', back_populates='visits', lazy='dynamic')
-    vitals = relationship('Vitals', back_populates='visits', lazy='dynamic')
-    allergies = relationship('AllergyIntolerance', back_populates='visits', lazy='dynamic')
-    medical_histories = relationship('MedicalHistory', back_populates='visits', lazy='dynamic')
-    appointents = relationship('Visit', back_populates='visits', lazy='dynamic')
+    observations = relationship('Observation', back_populates='visit', foreign_keys='Observation.visit_id')
+    procedures = relationship('Procedure', back_populates='visit', foreign_keys='Procedure.visit_id')
+    medications = relationship('MedicationStatement', back_populates='visit',foreign_keys='MedicationStatement.visit_id')
+    immunizations = relationship('Immunization', back_populates='visit', foreign_keys='Immunization.visit_id')
+    vitals = relationship('Vitals', back_populates='visit',  foreign_keys='Vitals.visit_id')
+    allergies = relationship('AllergyIntolerance', back_populates='visit',  foreign_keys='AllergyIntolerance.visit_id')
+    medical_histories = relationship('MedicalHistory', back_populates='visit',foreign_keys='MedicalHistory.visit_id')
+    appointments = relationship('Appointment', back_populates='visit', foreign_keys='Appointment.visit_id')
 
     def __repr__(self):
         return f'<Visit {self.id} for Patient {self.patient_id}>'
 
 
-# Allergy Model (FHIR: AllergyIntolerance)
 class AllergyIntolerance(db.Model):
     __tablename__ = 'allergy_intolerance'
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    patient_id = db.Column(db.String(50), db.ForeignKey('patient_basic.id'), nullable=False)  # FHIR: AllergyIntolerance.patient
-    substance = db.Column(db.String(100), nullable=False)  # FHIR: AllergyIntolerance.substance
-    clinical_status = db.Column(db.String(20), nullable=True)  # FHIR: AllergyIntolerance.clinicalStatus
-    verification_status = db.Column(db.String(20), nullable=True)  # FHIR: AllergyIntolerance.verificationStatus
-    severity = db.Column(db.String(20), nullable=True)  # FHIR: AllergyIntolerance.severity
+    patient_id = db.Column(db.String(50), db.ForeignKey('patient_basic.id'), nullable=False)
+    visit_id = db.Column(db.Integer, db.ForeignKey('visits.id'), nullable=False)
+    substance = db.Column(db.String(100), nullable=False)
+    clinical_status = db.Column(db.String(20), nullable=True)
+    verification_status = db.Column(db.String(20), nullable=True)
+    severity = db.Column(db.String(20), nullable=True)
 
-    # Relationship
+    # Relationships
     patient = relationship('Patient', back_populates='allergies')
-    visits = relationship('Visit', back_populates='allergies', lazy='dynamic')
+    visit = relationship('Visit', back_populates='allergies', foreign_keys=[visit_id])
 
-# Test Model (FHIR: Observation)
+
 class Observation(db.Model):
     __tablename__ = 'observation'
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    patient_id = db.Column(db.String(50), db.ForeignKey('patient_basic.id'), nullable=False)  # FHIR: Observation.subject
-    code = db.Column(db.String(100), nullable=False)  # FHIR: Observation.code
-    value = db.Column(db.String(50), nullable=True)  # FHIR: Observation.valueQuantity
-    status = db.Column(db.String(20), nullable=True)  # FHIR: Observation.status
-    effectiveDateTime = db.Column(db.DateTime, nullable=True)  # FHIR: Observation.effectiveDateTime
+    patient_id = db.Column(db.String(50), db.ForeignKey('patient_basic.id'), nullable=False)
+    visit_id = db.Column(db.Integer, db.ForeignKey('visits.id'), nullable=False)
+    code = db.Column(db.String(100), nullable=False)
+    value = db.Column(db.String(50), nullable=True)
+    status = db.Column(db.String(20), nullable=True)
+    effectiveDateTime = db.Column(db.DateTime, nullable=True)
 
-    # Relationship
+    # Relationships
     patient = relationship('Patient', back_populates='observations')
-    visits = relationship('Visit', back_populates='observations', lazy='dynamic')
+    visit = relationship('Visit', back_populates='observations', foreign_keys=[visit_id])
 
 # Medication Model (FHIR: MedicationStatement)
 class MedicationStatement(db.Model):
     __tablename__ = 'medication_statement'
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    patient_id = db.Column(db.String(50), db.ForeignKey('patient_basic.id'), nullable=False)  # FHIR: MedicationStatement.subject
-    medication = db.Column(db.String(100), nullable=False)  # FHIR: MedicationStatement.medicationCodeableConcept
-    dosage = db.Column(db.String(50), nullable=True)  # FHIR: MedicationStatement.dosage
-    status = db.Column(db.String(20), nullable=True)  # FHIR: MedicationStatement.status
-    effectivePeriod_start = db.Column(db.Date, nullable=True)  # FHIR: MedicationStatement.effectivePeriod.start
-    effectivePeriod_end = db.Column(db.Date, nullable=True)  # FHIR: MedicationStatement.effectivePeriod.end
+    patient_id = db.Column(db.String(50), db.ForeignKey('patient_basic.id'), nullable=False)
+    visit_id = db.Column(db.Integer, db.ForeignKey('visits.id'), nullable=False)
+    medication = db.Column(db.String(100), nullable=False)
+    dosage = db.Column(db.String(50), nullable=True)
+    status = db.Column(db.String(20), nullable=True)
+    effectivePeriod_start = db.Column(db.Date, nullable=True)
+    effectivePeriod_end = db.Column(db.Date, nullable=True)
 
-    # Relationship
+    # Relationships
     patient = relationship('Patient', back_populates='medications')
-    visits = relationship('Visit', back_populates='medications', lazy='dynamic')
+    visit = relationship('Visit', back_populates='medications', foreign_keys=[visit_id])
+
 
 # Appointment Model (FHIR: Appointment)
 class Appointment(db.Model):
     __tablename__ = 'appointment'
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    patient_id = db.Column(db.String(50), db.ForeignKey('patient_basic.id'), nullable=False)  # FHIR: Appointment.participant.patient
-    doctor_id = db.Column(db.String(50), db.ForeignKey('users.id'), nullable=False)  # FHIR: Appointment.participant.actor
-    start = db.Column(db.DateTime, nullable=False)  # FHIR: Appointment.start
-    end = db.Column(db.DateTime, nullable=True)  # FHIR: Appointment.end
-    status = db.Column(db.String(20), nullable=True)  # FHIR: Appointment.status
-    reason = db.Column(db.String(255), nullable=True)  # FHIR: Appointment.reasonCode
+    patient_id = db.Column(db.String(50), db.ForeignKey('patient_basic.id'), nullable=False)
+    visit_id = db.Column(db.Integer, db.ForeignKey('visits.id'), nullable=True)  # Set nullable=True if an appointment can exist without a visit
+    doctor_id = db.Column(db.String(50), db.ForeignKey('users.id'), nullable=False)
+    start = db.Column(db.DateTime, nullable=False)
+    end = db.Column(db.DateTime, nullable=True)
+    status = db.Column(db.String(20), nullable=True)
+    reason = db.Column(db.String(255), nullable=True)
 
     # Relationships
     patient = relationship('Patient', back_populates='appointments')
     doctor = relationship('User', back_populates='appointments')
-    visits = relationship('Visit', back_populates='appointments', lazy='dynamic')
+    visit = relationship('Visit', back_populates='appointments', foreign_keys=[visit_id])
+
 
 # Immunization Model (FHIR: Immunization)
 class Immunization(db.Model):
     __tablename__ = 'immunization'
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    patient_id = db.Column(db.String(50), db.ForeignKey('patient_basic.id'), nullable=False)  # FHIR: Immunization.patient
-    vaccine_code = db.Column(db.String(100), nullable=False)  # FHIR: Immunization.vaccineCode
-    status = db.Column(db.String(20), nullable=True)  # FHIR: Immunization.status
-    date = db.Column(db.Date, nullable=False)  # FHIR: Immunization.occurrenceDateTime
-    lot_number = db.Column(db.String(50), nullable=True)  # FHIR: Immunization.lotNumber
-    site = db.Column(db.String(50), nullable=True)  # FHIR: Immunization.site
-    notes = db.Column(db.Text, nullable=True)  # Custom: Additional notes
+    patient_id = db.Column(db.String(50), db.ForeignKey('patient_basic.id'), nullable=False)
+    visit_id = db.Column(db.Integer, db.ForeignKey('visits.id'), nullable=False)
+    vaccine_code = db.Column(db.String(100), nullable=False)
+    status = db.Column(db.String(20), nullable=True)
+    date = db.Column(db.Date, nullable=False)
+    lot_number = db.Column(db.String(50), nullable=True)
+    site = db.Column(db.String(50), nullable=True)
+    notes = db.Column(db.Text, nullable=True)
 
-    # Relationship
+    # Relationships
     patient = relationship('Patient', back_populates='immunizations')
-    visits = relationship('Visit', back_populates='immunizations', lazy='dynamic')
+    visit = relationship('Visit', back_populates='immunizations', foreign_keys=[visit_id])
 
 # Procedure Model (FHIR: Procedure)
 class Procedure(db.Model):
     __tablename__ = 'procedure'
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    patient_id = db.Column(db.String(50), db.ForeignKey('patient_basic.id'), nullable=False)  # FHIR: Procedure.subject
-    code = db.Column(db.String(100), nullable=False)  # FHIR: Procedure.code
-    status = db.Column(db.String(20), nullable=True)  # FHIR: Procedure.status
-    performed_date = db.Column(db.Date, nullable=True)  # FHIR: Procedure.performedDateTime
-    performer_id = db.Column(db.String(50), db.ForeignKey('users.id'), nullable=True)  # FHIR: Procedure.performer
-    notes = db.Column(db.Text, nullable=True)  # Custom: Additional notes
+    patient_id = db.Column(db.String(50), db.ForeignKey('patient_basic.id'), nullable=False)
+    visit_id = db.Column(db.Integer, db.ForeignKey('visits.id'), nullable=False)
+    code = db.Column(db.String(100), nullable=False)
+    status = db.Column(db.String(20), nullable=True)
+    performed_date = db.Column(db.Date, nullable=True)
+    performer_id = db.Column(db.String(50), db.ForeignKey('users.id'), nullable=True)
+    notes = db.Column(db.Text, nullable=True)
 
     # Relationships
     patient = relationship('Patient', back_populates='procedures')
     performer = relationship('User', back_populates='procedures')
-    visits = relationship('Visit', back_populates='procedures', lazy='dynamic')
+    visit = relationship('Visit', back_populates='procedures', foreign_keys=[visit_id])
+
 
 # Vitals Model (FHIR: Observation for Vitals)
 class Vitals(db.Model):
     __tablename__ = 'vitals'
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    patient_id = db.Column(db.String(50), db.ForeignKey('patient_basic.id'), nullable=False)  # FHIR: Observation.subject
-    type = db.Column(db.String(50), nullable=False)  # Custom: Vitals type (e.g., Blood Pressure, Heart Rate)
-    value = db.Column(db.String(50), nullable=False)  # FHIR: Observation.valueQuantity
-    unit = db.Column(db.String(20), nullable=False)  # FHIR: Observation.valueQuantity.unit
-    date_recorded = db.Column(db.DateTime, nullable=False)  # FHIR: Observation.effectiveDateTime
+    patient_id = db.Column(db.String(50), db.ForeignKey('patient_basic.id'), nullable=False)
+    visit_id = db.Column(db.Integer, db.ForeignKey('visits.id'), nullable=False)
+    type = db.Column(db.String(50), nullable=False)
+    value = db.Column(db.String(50), nullable=False)
+    unit = db.Column(db.String(20), nullable=False)
+    date_recorded = db.Column(db.DateTime, nullable=False)
 
-    # Relationship
+    # Relationships
     patient = relationship('Patient', back_populates='vitals')
-    visits = relationship('Visit', back_populates='vitals', lazy='dynamic')
+    visit = relationship('Visit', back_populates='vitals', foreign_keys=[visit_id])
+
     
 # Medical History Model (Custom: History)
 class MedicalHistory(db.Model):
@@ -312,11 +322,12 @@ class MedicalHistory(db.Model):
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     patient_id = db.Column(db.String(50), db.ForeignKey('patient_basic.id'), nullable=False)
-    condition = db.Column(db.String(100), nullable=False)  # E.g., Diabetes, Hypertension
-    onset_date = db.Column(db.Date, nullable=True)  # When the condition began
-    resolution_date = db.Column(db.Date, nullable=True)  # When the condition was resolved, if applicable
-    notes = db.Column(db.Text, nullable=True)  # Additional notes
+    visit_id = db.Column(db.Integer, db.ForeignKey('visits.id'), nullable=False)
+    condition = db.Column(db.String(100), nullable=False)
+    onset_date = db.Column(db.Date, nullable=True)
+    resolution_date = db.Column(db.Date, nullable=True)
+    notes = db.Column(db.Text, nullable=True)
 
-    # Relationship
+    # Relationships
     patient = relationship('Patient', back_populates='medical_history')
-    visits = relationship('Visit', back_populates='medical_histories', lazy='dynamic')
+    visit = relationship('Visit', back_populates='medical_histories', foreign_keys=[visit_id])
