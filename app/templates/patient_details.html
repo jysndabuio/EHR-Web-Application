@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %} Patient Dashboard {% endblock %}
+
+
+{% block content %}
+<h1 class="mb-4">Patient Details</h1>
+
+        <!-- Patient Info Form -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                Edit Patient Information
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {{ patient_form.hidden_tag() }}
+                    <div class="mb-3">
+                        {{ patient_form.firstname.label(class_="form-label") }}
+                        {{ patient_form.firstname(class_="form-control") }}
+                    </div>
+                    <div class="mb-3">
+                        {{ patient_form.lastname.label(class_="form-label") }}
+                        {{ patient_form.lastname(class_="form-control") }}
+                    </div>
+                    <div class="mb-3">
+                        {{ patient_form.contact_number.label(class_="form-label") }}
+                        {{ patient_form.contact_number(class_="form-control") }}
+                    </div>
+                    <div class="mb-3">
+                        {{ patient_form.home_address.label(class_="form-label") }}
+                        {{ patient_form.home_address(class_="form-control") }}
+                    </div>
+                    <button type="submit" class="btn btn-success">Save Changes</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Immunizations -->
+        <h2>Immunizations</h2>
+        <table class="table table-bordered table-striped">
+            <thead class="table-dark">
+                <tr>
+                    <th>Vaccine Code</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for imm in immunizations %}
+                <tr>
+                    <td>{{ imm.vaccine_code }}</td>
+                    <td>{{ imm.status }}</td>
+                    <td>{{ imm.date }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Add Immunization Form -->
+        <div class="card mt-4">
+            <div class="card-header bg-secondary text-white">
+                Add Immunization
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {{ immunization_form.hidden_tag() }}
+                    <div class="mb-3">
+                        {{ immunization_form.vaccine_code.label(class_="form-label") }}
+                        {{ immunization_form.vaccine_code(class_="form-control") }}
+                    </div>
+                    <div class="mb-3">
+                        {{ immunization_form.status.label(class_="form-label") }}
+                        {{ immunization_form.status(class_="form-control") }}
+                    </div>
+                    <div class="mb-3">
+                        {{ immunization_form.date.label(class_="form-label") }}
+                        {{ immunization_form.date(class_="form-control") }}
+                    </div>
+                    <button type="submit" class="btn btn-primary">Add Immunization</button>
+                </form>
+            </div>
+        </div>
+
+{% endblock %}

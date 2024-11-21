@@ -8,47 +8,51 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
 </head>
 <body>
-    <!-- Navbar with Logo -->
-<nav class="navbar navbar-expand-lg navbar-light bg-light">
-    <div class="container">
-        <!-- Logo Image -->
-        <a class="navbar-brand" href="#">
-            <img src="/static/image/medcare-logo.webp" width="50" height="50" alt="MedCare Health Services Logo" class="d-inline-block align-middle">
-            MedCare Health Services
-        </a>
-        
-        <!-- Navbar Toggler (for mobile view) -->
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        
-        <!-- Navbar Links -->
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav ml-auto">
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ url_for('main.doctor_dashboard') }}">Home</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#">About</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#">Services</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ url_for('main.account') }}">Account</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#">Contact</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link btn btn-primary text-white" href="{{ url_for('main.logout') }}">Logout</a>
-                </li>
-            </ul>
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <div class="d-flex align-items-center">
+                <!-- Conditional Return Button -->
+                {% if show_return_button %}
+                <a class="btn btn-outline-light me-2 return-button" href="{{ return_url }}">
+                    <i class="bi bi-arrow-left"></i> Return
+                </a>
+                {% endif %}
+                <!-- Logo Icon -->
+                <a class="navbar-brand" href="{{ url_for('main.index') }}">
+                    <img src="{{ url_for('static', filename='/image/medcare-logo.webp') }}" alt="Logo" class="d-inline-block align-text-top">
+                    <span>MedCare Health Services</span>
+                </a>
+            </div>
+
+            <!-- Toggle button for mobile view -->
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <!-- Navbar links -->
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                <!-- Right side (user account links) -->
+                <ul class="navbar-nav ms-auto">
+                    {% if current_user.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('main.account') }}">Account</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('main.logout') }}">Logout</a>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('main.login') }}">Login</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
         </div>
-    </div>
-</nav>
+    </nav>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
@@ -61,17 +65,12 @@
   {% endwith %}
   
 
-<!-- Main Content -->
+<!-- Content Wrapper -->
 <div class="container mt-5">
     {% block content %}{% endblock %}
 </div>
 
-<!-- Footer (Optional, can be added globally) -->
-<footer class="bg-light py-3 mt-5">
-    <div class="container text-center">
-        <p>&copy; 2024 My Website | All rights reserved.</p>
-    </div>
-</footer>
+
 
 <!-- Bootstrap JS and Popper -->
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
@@ -79,5 +78,6 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
 <script src="{{ url_for('static', filename='js/edit_profile.js') }}"></script>
+</body>
 </body>
 </html>

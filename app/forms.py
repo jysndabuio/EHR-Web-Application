@@ -17,11 +17,11 @@ class RegisterForm(FlaskForm):
             ('other', 'Other')], 
             validators=[DataRequired()])
     contact_number=IntegerField(validators=[DataRequired()])
+    country = StringField('Country', validators=[DataRequired()])
     id_card_number = StringField('ID number', validators=[
             DataRequired(), 
             Regexp(r'^\d{11}$', message='Please provide your 11-digit identification card number')
     ])
-    license_number=IntegerField('License Number', validators=[DataRequired()])
     home_address=StringField('Complete Home Adress', validators=[DataRequired()]) 
     password = PasswordField('Password', validators=[
             DataRequired(),
@@ -69,3 +69,36 @@ class UserUpdateProfile(FlaskForm):
 class PasswordResetForm(FlaskForm):
     email = EmailField('Email', validators=[DataRequired(), Email()])
     submit = SubmitField('Reset Password') 
+
+class PatientUpdateForm(FlaskForm):
+    firstname = StringField('First Name', validators=[DataRequired()])
+    lastname = StringField('Last Name', validators=[DataRequired()])
+    contact_number = StringField('Contact Number', validators=[DataRequired(), Length(min=10, max=15)])
+    home_address = StringField('Home Address', validators=[DataRequired()])
+    submit = SubmitField('Save Changes')
+
+class ImmunizationForm(FlaskForm):
+    vaccine_code = StringField('Vaccine Code', validators=[DataRequired()])
+    status = SelectField('Status', choices=[('completed', 'Completed'), ('pending', 'Pending')], validators=[DataRequired()])
+    date = DateField('Date', validators=[DataRequired()])
+    submit = SubmitField('Add Immunization')
+
+class ProcedureForm(FlaskForm):
+    code = StringField('Procedure Code', validators=[DataRequired()])
+    status = SelectField('Status', choices=[('completed', 'Completed'), ('planned', 'Planned')], validators=[DataRequired()])
+    performed_date = DateField('Performed Date', validators=[DataRequired()])
+    submit = SubmitField('Add Procedure')
+
+class VitalsForm(FlaskForm):
+    type = StringField('Vital Type (e.g., Blood Pressure)', validators=[DataRequired()])
+    value = StringField('Value', validators=[DataRequired()])
+    unit = StringField('Unit (e.g., mmHg)', validators=[DataRequired()])
+    date_recorded = DateField('Date Recorded', validators=[DataRequired()])
+    submit = SubmitField('Add Vitals')
+
+class MedicalHistoryForm(FlaskForm):
+    condition = StringField('Condition', validators=[DataRequired()])
+    onset_date = DateField('Onset Date', validators=[DataRequired()])
+    resolution_date = DateField('Resolution Date')
+    notes = StringField('Notes')
+    submit = SubmitField('Add Medical History')

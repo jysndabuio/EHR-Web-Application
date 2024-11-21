@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %} Patient Dashboard {% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Your Patients</h1>
+
+        <!-- Patient List -->
+        <table class="table table-bordered table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th>First Name</th>
+                    <th>Last Name</th>
+                    <th>Contact</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if patients %}
+                    {% for patient in patients %}
+                    <tr>
+                        <td>{{ patient.firstname }}</td>
+                        <td>{{ patient.lastname }}</td>
+                        <td>{{ patient.contact_number }}</td>
+                        <td>
+                            <a href="{{ url_for('patient_details', patient_id=patient.id) }}" class="btn btn-primary btn-sm">View Details</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="4" class="text-center">No patients found. Add a new patient below.</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+
+        <!-- Add Patient Form -->
+        <div class="card mt-4">
+            <div class="card-header bg-primary text-white">
+                Add New Patient
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {{ patient_form.hidden_tag() }}
+                    <div class="mb-3">
+                        {{ patient_form.firstname.label(class_="form-label") }}
+                        {{ patient_form.firstname(class_="form-control") }}
+                    </div>
+                    <div class="mb-3">
+                        {{ patient_form.lastname.label(class_="form-label") }}
+                        {{ patient_form.lastname(class_="form-control") }}
+                    </div>
+                    <div class="mb-3">
+                        {{ patient_form.contact_number.label(class_="form-label") }}
+                        {{ patient_form.contact_number(class_="form-control") }}
+                    </div>
+                    <div class="mb-3">
+                        {{ patient_form.home_address.label(class_="form-label") }}
+                        {{ patient_form.home_address(class_="form-control") }}
+                    </div>
+                    <button type="submit" class="btn btn-success">Add Patient</button>
+                </form>
+            </div>
+        </div>
+{% endblock %}
+

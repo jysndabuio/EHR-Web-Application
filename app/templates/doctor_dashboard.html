@@ -1,9 +1,93 @@
 {% extends "base.html" %}
 
-{% block title %} Patient Dashboard {% endblock %}
+{% block title %} Doctor Dashboard {% endblock %}
 
 
 {% block content %}
-<h1>Doctor</h1>
+<div class="container my-4">
+    <div class="row row-cols-1 row-cols-md-3 g-4">
+        <!-- Accounts Thumbnail -->
+        <div class="col">
+            <a href="{{ url_for('main.account') }}" class="text-decoration-none">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body text-center">
+                        <div class="icon-card text-primary mb-2">
+                            <i class="bi bi-people" style="font-size: 48px;"></i>
+                        </div>
+                        <p class="card-text">Accounts</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        
+        <!-- Other Thumbnails -->
+        <div class="col">
+            <a href="#" class="text-decoration-none">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body text-center">
+                        <div class="icon-card text-primary mb-2">
+                            <i class="bi bi-clipboard-check" style="font-size: 48px;"></i>
+                        </div>
+                        <p class="card-text">Survey</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col">
+            <a href="{{ url_for('main.doctor_patients') }}" class="text-decoration-none">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body text-center">
+                        <div class="icon-card text-primary mb-2">
+                            <i class="bi bi-heart-pulse" style="font-size: 48px;"></i>
+                        </div>
+                        <p class="card-text">Patients</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col">
+            <a href="#" class="text-decoration-none">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body text-center">
+                        <div class="icon-card text-primary mb-2">
+                            <i class="bi bi-calendar-check" style="font-size: 48px;"></i>
+                        </div>
+                        <p class="card-text">Appointments</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col">
+            <a href="#" class="text-decoration-none">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body text-center">
+                        <div class="icon-card text-primary mb-2">
+                            <i class="bi bi-info-circle" style="font-size: 48px;"></i>
+                        </div>
+                        <p class="card-text">About</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col">
+            <a href="#" class="text-decoration-none">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body text-center">
+                        <div class="icon-card text-primary mb-2">
+                            <i class="bi bi-stars" style="font-size: 48px;"></i>
+                        </div>
+                        <p class="card-text">Extra</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+</div>
+
+  
 {% endblock %}
 

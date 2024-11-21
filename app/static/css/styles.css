@@ -1,6 +1,44 @@
+/* Custom styles */
+body {
+    background-color: #f0f2f5; /* Light gray background */
+}
+.navbar-brand {
+    display: flex;
+    align-items: center;
+}
+.navbar-brand img {
+    height: 50px; /* Adjust the height to make it larger */
+    max-height: 70px; /* Ensure it doesn't exceed a reasonable size */
+    width: auto; /* Maintain aspect ratio */
+    margin-right: 8px; /* Keep spacing consistent */
+}
+.return-button {
+    margin-right: 16px;
+    color: #fff !important;
+}
+
+.return-button {
+    margin-right: 16px;
+    color: #fff !important; /* White color */
+    border-color: #fff !important;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.return-button:hover {
+    color: #000 !important; /* Black text on hover */
+    background-color: #fff !important; /* White background on hover */
+    border-color: #fff !important;
+}
+@media (max-width: 768px) {
+    .navbar-brand img {
+        height: 40px; /* Adjust height for smaller screens */
+    }
+}
+
+/* Custom styles 
 body{
 background-color:  rgba(237, 232, 220, 0.8)
-}
+}*/
 
 .ui-w-80 {
     width: 80px !important;
@@ -96,3 +134,15 @@ html:not(.dark-style) .account-settings-links .list-group-item.active {
     padding: 0.85rem 1.5rem;
     border-color: rgba(24,28,33,0.03) !important;
 }
+
+
+.icon-card {
+    font-size: 80px;
+    text-align: center;
+    padding: 40px 0;
+    color: #0d6efd; /* Bootstrap primary color */
+  }
+  .card-text {
+    font-size: 1.25rem;
+    font-weight: 500;
+  }

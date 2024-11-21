@@ -45,11 +45,19 @@
               <div class="text-danger">{{ error }}</div>
             {% endfor %}
           </div>
-      
+          
           <div class="form-group mb-3">
             <label for="lastname" class="form-label">Last Name</label>
             {{ form.lastname(class="form-control", id="lastname") }}
             {% for error in form.lastname.errors %}
+              <div class="text-danger">{{ error }}</div>
+            {% endfor %}
+          </div>
+
+          <div class="form-group mb-3">
+            <label for="firstname" class="form-label">First Name</label>
+            {{ form.firstname(class="form-control", id="firstame") }}
+            {% for error in form.firstname.errors %}
               <div class="text-danger">{{ error }}</div>
             {% endfor %}
           </div>
@@ -90,7 +98,7 @@
               <div class="col-md-6 form-group">
                 <label for="birthday" class="form-label">Birthday:</label>
                 {{ form.birthday(class="form-control", id="birthday") }}
-                {% for error in form.age.errors %}
+                {% for error in form.birthday.errors %}
               <div class="text-danger">{{ error }}</div>
                 {% endfor %}
               </div>
@@ -116,17 +124,17 @@
           </div>
       
           <div class="form-group mb-3">
-            <label for="license_number" class="form-label">Professional License Number</label>
-            {{ form.license_number(class="form-control", id="license_number") }}
-            {% for error in form.license_number.errors %}
-              <div class="text-danger">{{ error }}</div>
-            {% endfor %}
-          </div>
-      
-          <div class="form-group mb-3">
             <label for="home_address" class="form-label">Complete Home Address</label>
             {{ form.home_address(class="form-control", id="home_address") }}
             {% for error in form.home_address.errors %}
+              <div class="text-danger">{{ error }}</div>
+            {% endfor %}
+          </div>
+
+          <div class="form-group mb-3">
+            <label for="country" class="form-label">Country</label>
+            {{ form.country(class="form-control", id="country") }}
+            {% for error in form.country.errors %}
               <div class="text-danger">{{ error }}</div>
             {% endfor %}
           </div>
