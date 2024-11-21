@@ -27,6 +27,7 @@ class User(UserMixin, db.Model):
     ecd_name = db.Column(db.String(50), nullable=True)
     ecd_contact_number = db.Column(db.String(50), nullable=True)
     created_at = db.Column(db.DateTime, default=db.func.now())
+    profile_image = db.Column(db.String(255), nullable=True, default='image/default_profile.jpg')
 
     # Relationships
     education_records = relationship('UserEducation', back_populates='user', lazy=True)

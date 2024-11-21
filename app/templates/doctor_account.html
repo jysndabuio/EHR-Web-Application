@@ -33,14 +33,21 @@
             <!-- General Tab -->
             <div class="tab-pane fade active show" id="account-general">
               <div class="card-body media align-items-center">
-                <img src="https://bootdey.com/img/Content/avatar/avatar1.png" width="150" height="150" alt="Profile" class="d-block ui-w-80">
+                <!-- Display current profile image -->
+                <img src="{{ url_for('static', filename=user.profile_image if user.profile_image else 'image/default_profile.jpg') }}" 
+                      width="150" 
+                      height="150" 
+                      alt="Profile" 
+                      class="d-block ui-w-80 rounded-circle">
+                
                 <div class="media-body ml-4">
+                  <!-- File input for new profile photo -->
                   <label class="btn btn-outline-primary">
                     Upload New Photo
-                    <input type="file" class="account-settings-fileinput">
+                    <input type="file" class="d-none" name="profile_image">
                   </label>
                   &nbsp;
-                  <button type="button" class="btn btn-default md-btn-flat">Reset</button>
+                  <button type="button" class="btn btn-default md-btn-flat" onclick="resetProfileImage()">Reset</button>
                   <div class="text-light small mt-1">Allowed JPG, GIF, or PNG. Max size of 800K</div>
                 </div>
               </div>

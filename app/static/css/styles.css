@@ -35,6 +35,15 @@ body {
     }
 }
 
+#current-time {
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+
+.navbar .rounded-circle {
+    border: 2px solid #fff;
+}
+
 /* Custom styles 
 body{
 background-color:  rgba(237, 232, 220, 0.8)

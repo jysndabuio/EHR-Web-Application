@@ -19,3 +19,8 @@ def send_reset_email(email, reset_url):
     msg = Message('Password Reset Request', recipients=[email])
     msg.body = f"To reset your password, click the following link: {reset_url}\nIf you didn't make this request, please ignore this email."
     mail.send(msg)
+
+
+def allowed_file(filename):
+    ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS

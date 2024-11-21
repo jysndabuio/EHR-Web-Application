@@ -5,7 +5,7 @@ from flask_bcrypt import Bcrypt
 from .config import Config
 from flask_mail import Mail
 from flask_login import LoginManager, current_user
-
+import os
 
 db = SQLAlchemy()
 migrate = Migrate()
@@ -26,6 +26,9 @@ def create_app():
     login_manager.login_view = "main.login" # Redirect to login if not authenticatedä
     mail.init_app(app)
     
+    # Ensure the upload folder exists
+    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
     # Import models after db is initialized
     from . import models
 

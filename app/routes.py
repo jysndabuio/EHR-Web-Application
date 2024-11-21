@@ -1,11 +1,14 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app
 from flask_login import login_user, logout_user, login_required, current_user
 from flask_mail import Message
 from datetime import datetime
 from .models import User, UserEducation, DoctorPatient, Patient, Vitals, AllergyIntolerance, Observation,Immunization, Procedure,MedicalHistory, MedicationStatement
 from .forms import RegisterForm, PasswordResetForm, UserUpdateProfile, PatientUpdateForm, ImmunizationForm, ProcedureForm, VitalsForm, MedicalHistoryForm
 from . import db, bcrypt, mail
-from .utils import verify_password_reset_token, generate_password_reset_token
+from .utils import verify_password_reset_token, generate_password_reset_token, allowed_file
+from .config import Config
+from werkzeug.utils import secure_filename
+import os
 
 bp = Blueprint('main', __name__)
 
@@ -242,69 +245,64 @@ def account():
     # Initialize the form
     form = UserUpdateProfile()
 
-    # Populate form with data from User and UserEducation
-    if request.method == 'GET':
-        for field_name, field in form._fields.items():
-            if hasattr(user, field_name):
-                field.data = getattr(user, field_name)
-            elif education and hasattr(education, field_name):
-                field.data = getattr(education, field_name)
+    # Ensure a default profile image is set
+    if not user.profile_image:
+        user.profile_image = 'image/default_profile.jpg'
+        db.session.commit()
 
     # Handle form submission
     if form.validate_on_submit():
-        # New data from form
-        new_username = form.username.data
-        new_email = form.email.data
-        new_contact_number = form.contact_number.data
-        new_home_address = form.home_address.data
-
-        # Password fields
-        current_password = form.current_password.data
-        new_password = form.password.data
-        confirm_password = form.confirm_password.data
-
-        # Check if the username is taken by another user
-        if new_username != user.username:
-            existing_user = User.query.filter_by(username=new_username).first()
-            if existing_user:
-                flash('Username is already taken. Please choose a different one.', 'danger')
+        # Handle image upload
+        if 'profile_image' in request.files and request.files['profile_image'].filename:
+            file = request.files['profile_image']
+            if file and Config.allowed_file(file.filename):
+                try:
+                    filename = secure_filename(file.filename)
+                    filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+                    file.save(filepath)
+                    user.profile_image = f'image/{filename}'
+                except Exception as e:
+                    flash(f'Error uploading image: {str(e)}', 'danger')
+                    return redirect(url_for('main.account'))
+            else:
+                flash('Invalid file type. Please upload a valid image (JPG, PNG, GIF).', 'danger')
                 return redirect(url_for('main.account'))
-
-        # Check if the email is taken by another user
-        if new_email != user.email:
-            existing_email = User.query.filter_by(email=new_email).first()
-            if existing_email:
-                flash('Email is already in use. Please choose a different one.', 'danger')
-                return redirect(url_for('main.account'))
-
-        # Handle password updates
-        if current_password or new_password or confirm_password:
-            # Validate current password
-            if not user.check_password(current_password):
-                flash('Current password is incorrect.', 'danger')
-                return redirect(url_for('main.account'))
-
-            # Ensure new passwords match
-            if new_password != confirm_password:
-                flash('New passwords do not match.', 'danger')
-                return redirect(url_for('main.account'))
-
-            # Ensure new password is different from the current password
-            if user.check_password(new_password):
-                flash('New password must be different from the current password.', 'danger')
-                return redirect(url_for('main.account'))
-
-            # Update the password securely
-            user.set_password(new_password)
-            flash('Password updated successfully!', 'success')
 
         # Update User fields
-        user.username = new_username
-        user.email = new_email
-        user.contact_number = new_contact_number
-        user.home_address = new_home_address
+        new_username = form.username.data
+        if new_username != user.username:
+            if User.query.filter_by(username=new_username).first():
+                flash('Username is already taken. Please choose a different one.', 'danger')
+                return redirect(url_for('main.account'))
+            user.username = new_username
 
-        # Update or create UserEducation fields
+        new_email = form.email.data
+        if new_email != user.email:
+            if User.query.filter_by(email=new_email).first():
+                flash('Email is already in use. Please choose a different one.', 'danger')
+                return redirect(url_for('main.account'))
+            user.email = new_email
+
+        user.contact_number = form.contact_number.data
+        user.home_address = form.home_address.data
+        user.ecd_name = form.ecd_name.data
+        user.ecd_contact_number = form.ecd_contact_number.data
+        user.country = form.country.data
+
+        # Handle password changes
+        if form.current_password.data or form.password.data or form.confirm_password.data:
+            if not user.check_password(form.current_password.data):
+                flash('Current password is incorrect.', 'danger')
+                return redirect(url_for('main.account'))
+            if form.password.data != form.confirm_password.data:
+                flash('New passwords do not match.', 'danger')
+                return redirect(url_for('main.account'))
+            if user.check_password(form.password.data):
+                flash('New password must be different from the current password.', 'danger')
+                return redirect(url_for('main.account'))
+            user.set_password(form.password.data)
+
+        # Update UserEducation fields
         if education:
             education.med_deg = form.med_deg.data
             education.med_deg_spec = form.med_deg_spec.data
@@ -314,7 +312,7 @@ def account():
             education.license_expiration = form.license_expiration.data
             education.years_of_experience = form.years_of_experience.data
         else:
-            # Create a new UserEducation record if none exists
+            # Create new education record if it doesn't exist
             education = UserEducation(
                 doctor_id=user.id,
                 med_deg=form.med_deg.data,
@@ -327,10 +325,32 @@ def account():
             )
             db.session.add(education)
 
-        # Save all changes to the database
         db.session.commit()
         flash('Profile updated successfully!', 'success')
         return redirect(url_for('main.account'))
+
+    # Populate form with data from User and UserEducation
+    #if request.method == 'GET':
+      #  form.username.data = user.username
+       # form.email.data = user.email
+        #form.contact_number.data = user.contact_number
+    #    #form.home_address.data = user.home_address
+#
+ #       if education:
+  #          form.med_deg.data = education.med_deg
+   #         form.med_deg_spec.data = education.med_deg_spec
+    #        form.board_cert.data = education.board_cert
+     #       form.license_number.data = education.license_number
+      #      form.license_issuer.data = education.license_issuer
+       #     form.license_expiration.data = education.license_expiration
+        #    form.years_of_experience.data = education.years_of_experience
+    # Populate form with data from User and UserEducation
+    if request.method == 'GET':
+        for field_name, field in form._fields.items():
+            if hasattr(user, field_name):
+                field.data = getattr(user, field_name)
+            elif education and hasattr(education, field_name):
+                field.data = getattr(education, field_name)
 
     return render_template('doctor_account.html',
                             user=user, 
