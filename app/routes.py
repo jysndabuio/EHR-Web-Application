@@ -2,8 +2,8 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from flask_login import login_user, logout_user, login_required, current_user
 from flask_mail import Message
 from datetime import datetime
-from .models import User, UserEducation, DoctorPatient, Patient, Vitals, AllergyIntolerance, Observation,Immunization, Procedure,MedicalHistory, MedicationStatement
-from .forms import RegisterForm, PasswordResetForm, UserUpdateProfile, PatientUpdateForm, ImmunizationForm, ProcedureForm, VitalsForm, MedicalHistoryForm
+from .models import User, UserEducation, DoctorPatient, Patient, Appointment, Vitals, AllergyIntolerance, Observation,Immunization, Procedure,MedicalHistory, MedicationStatement
+from .forms import RegisterForm, PatientForm, PasswordResetForm, UserUpdateProfile, PatientUpdateForm, ImmunizationForm, ProcedureForm, VitalsForm, MedicalHistoryForm
 from . import db, bcrypt, mail
 from .utils import verify_password_reset_token, generate_password_reset_token, allowed_file
 from .config import Config
@@ -112,30 +112,12 @@ def doctor_patients():
     doctor_patients = DoctorPatient.query.filter_by(doctor_id=doctor_id).all()
     patients = [relation.patient for relation in doctor_patients]
 
-    # Form for adding new patients
-    patient_form = PatientUpdateForm()
-
-    if patient_form.validate_on_submit():
-        # Create a new patient and associate with the doctor
-        new_patient = Patient(
-            firstname=patient_form.firstname.data,
-            lastname=patient_form.lastname.data,
-            contact_number=patient_form.contact_number.data,
-            home_address=patient_form.home_address.data,
-            doctor_relationships=[DoctorPatient(doctor_id=doctor_id)],  # Many-to-many link
-        )
-        db.session.add(new_patient)
-        db.session.commit()
-        flash('New patient added successfully!', 'success')
-        return redirect(url_for('main.doctor_patients'))
-
     return render_template('doctor_patients.html', 
                            patients=patients, 
-                           patient_form=patient_form,
                            show_return_button=True, 
                            return_url=url_for('main.doctor_dashboard'))
 
-@bp.route('/doctor/patient/<int:patient_id>', methods=['GET', 'POST'])
+@bp.route('/doctor/patient/<string:patient_id>', methods=['GET', 'POST'])
 @login_required
 def patient_details(patient_id):
     patient = Patient.query.get_or_404(patient_id)
@@ -145,13 +127,18 @@ def patient_details(patient_id):
     procedures = patient.procedures.all()
     vitals = patient.vitals.all()
     medical_history = patient.medical_history.all()
+    allergies = patient.allergies.all()
+    observations = patient.observations.all()
+    medications = patient.medications.all()
+    appointments = patient.appointments.all()
+
 
     # Forms for CRUD operations
     patient_form = PatientUpdateForm(obj=patient)
-    immunization_form = ImmunizationForm()
-    procedure_form = ProcedureForm()
-    vitals_form = VitalsForm()
-    history_form = MedicalHistoryForm()
+    immunization_form = ImmunizationForm(obj=patient)
+    procedure_form = ProcedureForm(obj=patient)
+    vitals_form = VitalsForm(obj=patient)
+    history_form = MedicalHistoryForm(obj=patient)
 
     # Handle Patient Update
     if patient_form.validate_on_submit():
@@ -229,7 +216,48 @@ def patient_details(patient_id):
         procedure_form=procedure_form,
         vitals_form=vitals_form,
         history_form=history_form,
+        show_return_button=True,
+        return_url=url_for('main.doctor_dashboard')
     )
+
+@bp.route('/doctor/patient/add', methods=['GET', 'POST'])
+@login_required
+def add_patient():
+    if current_user.role != 'doctor':
+        flash('Access denied.')
+        return redirect(url_for('dashboard'))
+
+    patient_form = PatientForm()
+
+    if patient_form.validate_on_submit():
+        # Create a new Patient
+        new_patient = Patient(
+            firstname=patient_form.firstname.data,
+            lastname=patient_form.lastname.data,
+            age=patient_form.age.data,
+            birthdate=patient_form.birthdate.data,
+            gender=patient_form.gender.data,
+            ecd_name=patient_form.ecd_name.data,
+            ecd_contact_number=patient_form.ecd_contact_number.data,
+            contact_number=patient_form.contact_number.data,
+            home_address=patient_form.home_address.data,
+        )
+        db.session.add(new_patient)
+        db.session.commit()  # Commit to generate new_patient.id
+
+        # Create association in DoctorPatient
+        doctor_patient = DoctorPatient(
+            doctor_id=current_user.id,
+            patient_id=new_patient.id
+        )
+        db.session.add(doctor_patient)
+        db.session.commit()
+
+        flash('New patient added successfully!', 'success')
+        return redirect(url_for('main.doctor_patients'))
+
+    return render_template('add_patient.html', patient_form=patient_form)
+
 
 @bp.route('/account', methods=['GET', 'POST'])
 @login_required

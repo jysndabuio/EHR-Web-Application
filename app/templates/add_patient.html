@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}Add New Patient{% endblock %}
+
+{% block content %}
+<h1>Add New Patient</h1>
+
+<!-- Add Patient Form -->
+<div class="card mt-4">
+    <div class="card-header bg-primary text-white">
+        Add New Patient
+    </div>
+    <div class="card-body">
+        <form method="POST">
+            {{ patient_form.hidden_tag() }}
+            <div class="mb-3">
+                {{ patient_form.firstname.label(class_="form-label") }}
+                {{ patient_form.firstname(class_="form-control") }}
+            </div>
+            <div class="mb-3">
+                {{ patient_form.lastname.label(class_="form-label") }}
+                {{ patient_form.lastname(class_="form-control") }}
+            </div>
+            <div class="mb-3">
+                {{ patient_form.age.label(class_="form-label") }}
+                {{ patient_form.age(class_="form-control") }}
+            </div>
+            <div class="mb-3">
+                {{ patient_form.birthdate.label(class_="form-label") }}
+                {{ patient_form.birthdate(class_="form-control") }}
+            </div>
+            <div class="mb-3">
+                {{ patient_form.gender.label(class_="form-label") }}
+                <div>
+                    {% for option in patient_form.gender %}
+                      <div class="form-check form-check-inline">
+                        {{ option(class='form-check-input') }}
+                        {{ option.label(class='form-check-label') }}
+                      </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="mb-3">
+                {{ patient_form.contact_number.label(class_="form-label") }}
+                {{ patient_form.contact_number(class_="form-control") }}
+            </div>
+            <div class="mb-3">
+                {{ patient_form.home_address.label(class_="form-label") }}
+                {{ patient_form.home_address(class_="form-control") }}
+            </div>
+            <div class="mb-3">
+                {{ patient_form.ecd_name.label(class_="form-label") }}
+                {{ patient_form.ecd_name(class_="form-control") }}
+            </div>
+            <div class="mb-3">
+                {{ patient_form.ecd_contact_number.label(class_="form-label") }}
+                {{ patient_form.ecd_contact_number(class_="form-control") }}
+            </div>
+            <button type="submit" class="btn btn-success">Add Patient</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

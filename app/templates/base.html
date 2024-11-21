@@ -22,9 +22,9 @@
                 {% endif %}
                 
                 <!-- Logo -->
-                <a class="navbar-brand" href="{{ url_for('main.index') }}">
+                <a class="navbar-brand pl-2" href="{{ url_for('main.index') }}">
                     <img src="{{ url_for('static', filename='/image/medcare-logo.webp') }}" alt="Logo" class="d-inline-block align-text-top">
-                    <span>MedCare Health Services</span>
+                    <span class="pl-3">MedCare Health Services</span>
                 </a>
             </div>
             
@@ -38,7 +38,8 @@
                          alt="Profile" 
                          class="rounded-circle me-2" 
                          style="width: 40px; height: 40px; object-fit: cover;">
-                    <span class="text-white">{{ current_user.username }}</span>
+                    <span class="text-white pr-5">{{ current_user.username }}</span>
+                    <a class="btn btn-outline-light" href="{{ url_for('main.logout') }}">Logout</a>
                 {% else %}
                     <a class="btn btn-outline-light ms-2" href="{{ url_for('main.login') }}">Login</a>
                 {% endif %}

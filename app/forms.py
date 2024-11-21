@@ -1,6 +1,6 @@
 # forms.py
 from flask_wtf import FlaskForm
-from wtforms import StringField, DateField, PasswordField, SelectField, TelField, SubmitField, HiddenField, EmailField, IntegerField, RadioField
+from wtforms import StringField,DateTimeField,TextAreaField, DateField, PasswordField, SelectField, TelField, SubmitField, HiddenField, EmailField, IntegerField, RadioField
 from wtforms.validators import DataRequired, Email, EqualTo, Length, Regexp, NumberRange, Optional
 
 class RegisterForm(FlaskForm):
@@ -70,6 +70,22 @@ class PasswordResetForm(FlaskForm):
     email = EmailField('Email', validators=[DataRequired(), Email()])
     submit = SubmitField('Reset Password') 
 
+class PatientForm(FlaskForm):
+    firstname = StringField('First Name', validators=[DataRequired()])
+    lastname = StringField('Last Name', validators=[DataRequired()])
+    contact_number = StringField('Contact Number', validators=[DataRequired(), Length(min=10, max=15)])
+    home_address = StringField('Home Address', validators=[DataRequired()])
+    age = IntegerField('Age', validators=[DataRequired()])
+    birthdate = DateField('Birthday', format='%Y-%m-%d', validators=[Optional()])
+    gender = RadioField('M/W/F', choices=[
+            ('male', 'Male'), # 'male' is the value, 'Male' is the label
+            ('female', 'Female'),
+            ('other', 'Other')], 
+            validators=[DataRequired()])
+    ecd_name = StringField('Emergency Contact Name', validators=[Optional()])
+    ecd_contact_number = StringField('Emergency Contact Number', validators=[Optional()])
+    submit = SubmitField('Save')
+
 class PatientUpdateForm(FlaskForm):
     firstname = StringField('First Name', validators=[DataRequired()])
     lastname = StringField('Last Name', validators=[DataRequired()])
@@ -77,28 +93,78 @@ class PatientUpdateForm(FlaskForm):
     home_address = StringField('Home Address', validators=[DataRequired()])
     submit = SubmitField('Save Changes')
 
-class ImmunizationForm(FlaskForm):
-    vaccine_code = StringField('Vaccine Code', validators=[DataRequired()])
-    status = SelectField('Status', choices=[('completed', 'Completed'), ('pending', 'Pending')], validators=[DataRequired()])
-    date = DateField('Date', validators=[DataRequired()])
-    submit = SubmitField('Add Immunization')
+class VisitForm(FlaskForm):
+    patient_id = HiddenField('Patient ID', validators=[DataRequired()])
+    doctor_id = HiddenField('Doctor ID', validators=[DataRequired()])
+    visit_date = DateTimeField('Visit Date', validators=[Optional()], format='%Y-%m-%d %H:%M:%S')
+    visit_type = StringField('Visit Type', validators=[Optional(), Length(max=50)])
+    notes = TextAreaField('Notes', validators=[Optional()])
+
+class ObservationForm(FlaskForm):
+    visit_id = HiddenField('Visit ID', validators=[DataRequired()])
+    patient_id = HiddenField('Patient ID', validators=[DataRequired()])
+    code = StringField('Observation Code', validators=[DataRequired(), Length(max=100)])
+    value = StringField('Value', validators=[Optional(), Length(max=50)])
+    status = SelectField('Status', choices=[('registered', 'Registered'), ('preliminary', 'Preliminary'), ('final', 'Final')], validators=[Optional()])
+    effectiveDateTime = DateTimeField('Effective DateTime', validators=[Optional()], format='%Y-%m-%d %H:%M:%S')
+
+class AllergyIntoleranceForm(FlaskForm):
+    visit_id = HiddenField('Visit ID', validators=[DataRequired()])
+    patient_id = HiddenField('Patient ID', validators=[DataRequired()])
+    substance = StringField('Substance', validators=[DataRequired(), Length(max=100)])
+    clinical_status = SelectField('Clinical Status', choices=[('active', 'Active'), ('inactive', 'Inactive'), ('resolved', 'Resolved')], validators=[Optional()])
+    verification_status = SelectField('Verification Status', choices=[('unconfirmed', 'Unconfirmed'), ('confirmed', 'Confirmed')], validators=[Optional()])
+    severity = SelectField('Severity', choices=[('mild', 'Mild'), ('moderate', 'Moderate'), ('severe', 'Severe')], validators=[Optional()])
+
+class MedicationStatementForm(FlaskForm):
+    visit_id = HiddenField('Visit ID', validators=[DataRequired()])
+    patient_id = HiddenField('Patient ID', validators=[DataRequired()])
+    medication = StringField('Medication', validators=[DataRequired(), Length(max=100)])
+    dosage = StringField('Dosage', validators=[Optional(), Length(max=50)])
+    status = SelectField('Status', choices=[('active', 'Active'), ('completed', 'Completed'), ('entered-in-error', 'Entered in Error'), ('intended', 'Intended')], validators=[Optional()])
+    effectivePeriod_start = DateField('Effective Start Date', validators=[Optional()])
+    effectivePeriod_end = DateField('Effective End Date', validators=[Optional()])
 
 class ProcedureForm(FlaskForm):
-    code = StringField('Procedure Code', validators=[DataRequired()])
-    status = SelectField('Status', choices=[('completed', 'Completed'), ('planned', 'Planned')], validators=[DataRequired()])
-    performed_date = DateField('Performed Date', validators=[DataRequired()])
-    submit = SubmitField('Add Procedure')
+    visit_id = HiddenField('Visit ID', validators=[DataRequired()])
+    patient_id = HiddenField('Patient ID', validators=[DataRequired()])
+    code = StringField('Procedure Code', validators=[DataRequired(), Length(max=100)])
+    status = SelectField('Status', choices=[('preparation', 'Preparation'), ('in-progress', 'In Progress'), ('completed', 'Completed'), ('entered-in-error', 'Entered in Error')], validators=[Optional()])
+    performed_date = DateField('Performed Date', validators=[Optional()])
+    performer_id = HiddenField('Performer ID', validators=[Optional()])
+    notes = TextAreaField('Notes', validators=[Optional()])
 
 class VitalsForm(FlaskForm):
-    type = StringField('Vital Type (e.g., Blood Pressure)', validators=[DataRequired()])
-    value = StringField('Value', validators=[DataRequired()])
-    unit = StringField('Unit (e.g., mmHg)', validators=[DataRequired()])
-    date_recorded = DateField('Date Recorded', validators=[DataRequired()])
-    submit = SubmitField('Add Vitals')
+    visit_id = HiddenField('Visit ID', validators=[DataRequired()])
+    patient_id = HiddenField('Patient ID', validators=[DataRequired()])
+    type = StringField('Vital Type', validators=[DataRequired(), Length(max=50)])
+    value = StringField('Value', validators=[DataRequired(), Length(max=50)])
+    unit = StringField('Unit', validators=[DataRequired(), Length(max=20)])
+    date_recorded = DateTimeField('Date Recorded', validators=[DataRequired()], format='%Y-%m-%d %H:%M:%S')
 
 class MedicalHistoryForm(FlaskForm):
-    condition = StringField('Condition', validators=[DataRequired()])
-    onset_date = DateField('Onset Date', validators=[DataRequired()])
-    resolution_date = DateField('Resolution Date')
-    notes = StringField('Notes')
-    submit = SubmitField('Add Medical History')
+    visit_id = HiddenField('Visit ID', validators=[Optional()])
+    patient_id = HiddenField('Patient ID', validators=[DataRequired()])
+    condition = StringField('Condition', validators=[DataRequired(), Length(max=100)])
+    onset_date = DateField('Onset Date', validators=[Optional()])
+    resolution_date = DateField('Resolution Date', validators=[Optional()])
+    notes = TextAreaField('Notes', validators=[Optional()])
+
+class ImmunizationForm(FlaskForm):
+    visit_id = HiddenField('Visit ID', validators=[Optional()])
+    patient_id = HiddenField('Patient ID', validators=[DataRequired()])
+    vaccine_code = StringField('Vaccine Code', validators=[DataRequired(), Length(max=100)])
+    status = SelectField('Status', choices=[('completed', 'Completed'), ('entered-in-error', 'Entered in Error'), ('not-done', 'Not Done')], validators=[Optional()])
+    date = DateField('Date', validators=[DataRequired()])
+    lot_number = StringField('Lot Number', validators=[Optional(), Length(max=50)])
+    site = StringField('Site', validators=[Optional(), Length(max=50)])
+    notes = TextAreaField('Notes', validators=[Optional()])
+
+class AppointmentForm(FlaskForm):
+    visit_id = HiddenField('Visit ID', validators=[Optional()])
+    patient_id = HiddenField('Patient ID', validators=[DataRequired()])
+    doctor_id = HiddenField('Doctor ID', validators=[DataRequired()])
+    start = DateTimeField('Start Time', validators=[DataRequired()], format='%Y-%m-%d %H:%M:%S')
+    end = DateTimeField('End Time', validators=[Optional()], format='%Y-%m-%d %H:%M:%S')
+    status = SelectField('Status', choices=[('proposed', 'Proposed'), ('pending', 'Pending'), ('booked', 'Booked'), ('arrived', 'Arrived'), ('fulfilled', 'Fulfilled'), ('cancelled', 'Cancelled'), ('noshow', 'No Show')], validators=[Optional()])
+    reason = TextAreaField('Reason', validators=[Optional(), Length(max=255)])
