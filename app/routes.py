@@ -132,7 +132,10 @@ def view_patient(patient_id):
         flash('You do not have permission to view this patient.', 'danger')
         return redirect(url_for('main.doctor_dashboard'))
 
-    return render_template('view_patient.html', patient=patient)
+    return render_template('view_patient.html', 
+                           patient=patient, 
+                           show_return_button=True, 
+                            return_url=url_for('main.doctor_dashboard'))
 
 @bp.route('/visit/<int:visit_id>', methods=['GET'])
 @login_required
@@ -157,7 +160,10 @@ def view_visit(visit_id):
         flash('You do not have permission to view this visit.', 'danger')
         return redirect(url_for('main.doctor_dashboard'))
 
-    return render_template('view_visit.html', visit=visit)
+    return render_template('view_visit.html', 
+                           visit=visit,
+                           show_return_button=True, 
+                            return_url=url_for('main.doctor_dashboard'))
 
 @bp.route('/add_visit/<string:patient_id>', methods=['GET', 'POST'])
 @login_required
@@ -179,7 +185,11 @@ def add_visit(patient_id):
         flash('New visit added successfully!', 'success')
         return redirect(url_for('main.view_patient', patient_id=patient.id))
 
-    return render_template('add_visit.html', form=form, patient=patient)
+    return render_template('add_visit.html', 
+                           form=form, 
+                           patient=patient, 
+                           show_return_button=True, 
+                            return_url=url_for('main.doctor_dashboard'))
 
 
 @bp.route('/observation/<int:observation_id>/edit', methods=['GET', 'POST'])
@@ -206,7 +216,11 @@ def edit_observation(observation_id):
         db.session.commit()
         flash('Observation updated successfully.', 'success')
         return redirect(url_for('main.view_visit', visit_id=visit.id))
-    return render_template('edit_observation.html', form=form, observation=observation)
+    return render_template('edit_observation.html', 
+                           form=form, 
+                           observation=observation,
+                           show_return_button=True, 
+                            return_url=url_for('main.doctor_dashboard'))
 
 
 @bp.route('/patient/<string:patient_id>/edit', methods=['GET', 'POST'])
@@ -237,7 +251,11 @@ def edit_patient(patient_id):
         db.session.commit()
         flash('Patient information updated successfully.', 'success')
         return redirect(url_for('main.view_patient', patient_id=patient.id))
-    return render_template('edit_patient.html', form=form, patient=patient)
+    return render_template('edit_patient.html', 
+                           form=form, 
+                           patient=patient,
+                           show_return_button=True, 
+                            return_url=url_for('main.doctor_dashboard'))
 
 @bp.route('/visit/<int:visit_id>/edit', methods=['GET', 'POST'])
 @login_required
@@ -261,7 +279,11 @@ def edit_visit(visit_id):
         db.session.commit()
         flash('Visit information updated successfully.', 'success')
         return redirect(url_for('view_visit', visit_id=visit.id))
-    return render_template('edit_visit.html', form=form, visit=visit)
+    return render_template('edit_visit.html', 
+                           form=form, 
+                           visit=visit,
+                           show_return_button=True, 
+                            return_url=url_for('main.doctor_dashboard'))
 
 
 
@@ -301,7 +323,10 @@ def add_patient():
         flash('New patient added successfully!', 'success')
         return redirect(url_for('main.doctor_patients'))
 
-    return render_template('add_patient.html', patient_form=patient_form)
+    return render_template('add_patient.html', 
+                           patient_form=patient_form,
+                           show_return_button=True, 
+                            return_url=url_for('main.doctor_dashboard'))
 
 
 @bp.route('/account', methods=['GET', 'POST'])
