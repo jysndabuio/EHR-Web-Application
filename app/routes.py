@@ -3,7 +3,7 @@ from flask_login import login_user, logout_user, login_required, current_user
 from flask_mail import Message
 from datetime import datetime
 from .models import User, UserEducation, DoctorPatient, Patient, Visit, Appointment, Vitals, AllergyIntolerance, Observation,Immunization, Procedure,MedicalHistory, MedicationStatement
-from .forms import RegisterForm,AddVisitForm, PatientForm, VisitForm, ObservationForm, PasswordResetForm, UserUpdateProfile, PatientUpdateForm, ImmunizationForm, ProcedureForm, VitalsForm, MedicalHistoryForm
+from .forms import RegisterForm,MedicationStatementForm,AllergyIntoleranceForm, AddVisitForm, PatientForm, VisitForm, ObservationForm, PasswordResetForm, UserUpdateProfile, PatientUpdateForm, ImmunizationForm, ProcedureForm, VitalsForm, MedicalHistoryForm
 from . import db, bcrypt, mail
 from .utils import verify_password_reset_token, generate_password_reset_token, allowed_file
 from .config import Config
@@ -126,14 +126,17 @@ def view_patient(patient_id):
         return redirect(url_for('login'))
     
     # Check if the patient is associated with the doctor
-    patient = Patient.query.options(joinedload(Patient.visits)).filter_by(id=patient_id).first_or_404()
+    patient = Patient.query.options(joinedload(Patient.visits), joinedload(Patient.appointments)).filter_by(id=patient_id).first_or_404()
     doctor_patient = DoctorPatient.query.filter_by(doctor_id=current_user.id, patient_id=patient_id).first()
     if not doctor_patient:
         flash('You do not have permission to view this patient.', 'danger')
         return redirect(url_for('main.doctor_dashboard'))
-
+    # Get the latest appointment 
+    latest_appointment = sorted(patient.appointments, key=lambda x: x.start, reverse=True)[0] if patient.appointments else None
+    
     return render_template('view_patient.html', 
                            patient=patient, 
+                           latest_appointment=latest_appointment,
                            show_return_button=True, 
                             return_url=url_for('main.doctor_dashboard'))
 
@@ -159,6 +162,11 @@ def view_visit(visit_id):
     if not doctor_patient:
         flash('You do not have permission to view this visit.', 'danger')
         return redirect(url_for('main.doctor_dashboard'))
+    
+    reason_code_map = {item["code"]: item["display"] for item in Visit.get_reason_codes()}
+
+    # Add the description to the visit object dynamically
+    visit.reason_code_description = reason_code_map.get(visit.reason_code, "Unknown Reason")
 
     return render_template('view_visit.html', 
                            visit=visit,
@@ -169,27 +177,84 @@ def view_visit(visit_id):
 @login_required
 def add_visit(patient_id):
     patient = Patient.query.get_or_404(patient_id)
-    form = AddVisitForm()
+    visit_form = AddVisitForm()
 
-    if form.validate_on_submit():
+     # Populate dynamic fields from model methods
+    visit_form.reason_code.choices = [(item["code"], item["display"]) for item in Visit.get_reason_codes()]
+    visit_form.status.choices = [(item["code"], item["display"]) for item in Visit.get_status_codes()]
+
+    if visit_form.validate_on_submit():
         # Create and save a new visit
         new_visit = Visit(
             patient_id=patient.id,
             doctor_id=current_user.id,  # Assuming logged-in user is the doctor
-            visit_type=form.visit_type.data,
-            visit_date=form.visit_date.data,
-            notes=form.notes.data
+            visit_date=visit_form.visit_date.data,
+            reason_code=visit_form.reason_code.data,
+            status=visit_form.status.data,
+            location=visit_form.location.data,
+            notes=visit_form.notes.data
         )
         db.session.add(new_visit)
         db.session.commit()
-        flash('New visit added successfully!', 'success')
+    
+        flash('Visit, observations, and medications added successfully!', 'success')
         return redirect(url_for('main.view_patient', patient_id=patient.id))
 
     return render_template('add_visit.html', 
-                           form=form, 
-                           patient=patient, 
+                           visit_form=visit_form, 
+                           patient=patient,
                            show_return_button=True, 
                             return_url=url_for('main.doctor_dashboard'))
+
+@bp.route('/visit/<int:visit_id>/add_observation', methods=['GET', 'POST'])
+@login_required
+def add_observation(visit_id):
+    if current_user.role != 'doctor':
+        flash('Access unauthorized.', 'danger')
+        return redirect(url_for('main.login'))
+
+    visit = Visit.query.get_or_404(visit_id)
+
+    # Ensure the doctor is associated with the patient
+    doctor_patient = DoctorPatient.query.filter_by(doctor_id=current_user.id, patient_id=visit.patient_id).first()
+    if not doctor_patient:
+        flash('You do not have permission to add observations for this visit.', 'danger')
+        return redirect(url_for('main.view_visit', visit_id=visit_id))
+
+    # Initialize the form and prepopulate hidden fields
+    observation_form = ObservationForm()
+    observation_form.visit_id.data = visit.id  # Populate visit_id
+    observation_form.patient_id.data = visit.patient_id  # Populate patient_id
+
+    if observation_form.validate_on_submit():
+        try:
+            # Debugging - Print form data
+            print(f"Form Data: {observation_form.data}")
+
+            new_observation = Observation(
+                patient_id=visit.patient_id,
+                visit_id=visit.id,
+                code=observation_form.code.data,
+                value=observation_form.value.data,
+                status=observation_form.status.data,
+            )
+            db.session.add(new_observation)
+            db.session.commit()
+
+            flash('Observation added successfully!', 'success')
+            return redirect(url_for('main.view_visit', visit_id=visit_id))
+        except Exception as e:
+            db.session.rollback()
+            flash(f"An error occurred: {str(e)}", "danger")
+
+    # Debugging - Print validation errors
+    if observation_form.errors:
+        print(f"Form Errors: {observation_form.errors}")
+
+    return render_template('add_observation.html', 
+                           observation_form=observation_form, 
+                           visit=visit)
+
 
 
 @bp.route('/observation/<int:observation_id>/edit', methods=['GET', 'POST'])
@@ -270,16 +335,23 @@ def edit_visit(visit_id):
         flash('You do not have permission to edit this visit.', 'danger')
         return redirect(url_for('main.doctor_dashboard'))
 
-    form = VisitForm(obj=visit)
+    form = AddVisitForm(obj=visit)
+    form.reason_code.choices = [(item["code"], item["display"]) for item in Visit.get_reason_codes()]
+    form.status.choices = [(item["code"], item["display"]) for item in Visit.get_status_codes()]
+
+    
     if form.validate_on_submit():
         visit.visit_date = form.visit_date.data
-        visit.visit_type = form.visit_type.data
+        visit.reason_code = form.reason_code.data
+        visit.diagnosis_code = form.diagnosis_code.data
+        visit.status = form.status.data
+        visit.location = form.location.data
         visit.notes = form.notes.data
 
         db.session.commit()
         flash('Visit information updated successfully.', 'success')
-        return redirect(url_for('view_visit', visit_id=visit.id))
-    return render_template('edit_visit.html', 
+        return redirect(url_for('main.view_visit', visit_id=visit.id))
+    return render_template('edit_visits.html', 
                            form=form, 
                            visit=visit,
                            show_return_button=True, 

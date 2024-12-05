@@ -5,10 +5,10 @@
 <div class="container mt-5">
     <h2>Patient Details</h2>
     <div class="card mb-3">
-        <div class="card-header">
-            {{ patient.firstname }} {{ patient.lastname }}
-            <a href="{{ url_for('main.edit_patient', patient_id=patient.id) }}" class="btn btn-primary btn-sm float-right">Edit</a>
-        </div>
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">{{ patient.firstname }} {{ patient.lastname }}</h5>
+            <a href="{{ url_for('main.edit_patient', patient_id=patient.id) }}" class="btn btn-primary btn-sm">Edit</a>
+        </div>        
         <div class="card-body">
             <p><strong>Patient ID:</strong> {{ patient.patient_id }}</p>
             <p><strong>Age:</strong> {{ patient.age }}</p>
@@ -19,6 +19,23 @@
         </div>
     </div>
 
+    <h3>Appointment</h3>
+
+    {% if latest_appointment %}
+    <div class="card mb-3">
+        <div class="card-header">
+            Next appointment {{ latest_appointment.start.strftime('%Y-%m-%d') }}
+            <a href="{{ url_for('main.view_visit', visit_id=latest_appointment.visit_id) }}" class="btn btn-info btn-sm float-right">View Details</a>
+        </div>
+        <div class="card-body">
+            <p><strong>Visit Type:</strong> {{ latest_appointment.visit_type }}</p>
+            <p><strong>Notes:</strong> {{ latest_appointment.notes }}</p>
+        </div>
+    </div>
+    {% else %}
+    <p>No upcoming appointments available.</p>
+    {% endif %}
+
     <h3>Visits</h3>
     {% for visit in patient.visits %}
     <div class="card mb-3">
@@ -27,7 +44,9 @@
             <a href="{{ url_for('main.view_visit', visit_id=visit.id) }}" class="btn btn-info btn-sm float-right">View Details</a>
         </div>
         <div class="card-body">
-            <p><strong>Visit Type:</strong> {{ visit.visit_type }}</p>
+            <p><strong>Status:</strong> {{ visit.status }}</p>
+            <p><strong>Reason Code:</strong> {{ visit.reason_code }}  - {{ visit.reason_code_description }}</p>
+            <p><strong>Diagnosis Code:</strong> {{ visit.diagnosis_code }}</p>
             <p><strong>Notes:</strong> {{ visit.notes }}</p>
         </div>
     </div>

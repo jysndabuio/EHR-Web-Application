@@ -123,7 +123,7 @@ class Patient(UserMixin, db.Model):
     allergies = relationship('AllergyIntolerance', back_populates='patient', lazy='dynamic')
     observations = relationship('Observation', back_populates='patient', lazy='dynamic')
     medications = relationship('MedicationStatement', back_populates='patient', lazy='dynamic')
-    appointments = relationship('Appointment', back_populates='patient', lazy='dynamic')
+    appointments = relationship('Appointment', back_populates='patient', lazy='select')
     visits = relationship('Visit', back_populates='patient')
 
     @staticmethod
@@ -174,9 +174,12 @@ class Visit(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     patient_id = db.Column(db.String(50), db.ForeignKey('patient_basic.id'), nullable=False)
     doctor_id = db.Column(db.String(50), db.ForeignKey('users.id'), nullable=False)
-    visit_date = db.Column(db.DateTime, default=db.func.now())
-    visit_type = db.Column(db.String(50), nullable=True)
-    notes = db.Column(db.Text, nullable=True)
+    visit_date = db.Column(db.DateTime, nullable=False)  # Date and time of the visit
+    reason_code = db.Column(db.String(256), nullable=True)  # Reason for the visit (FHIR codeable concept)
+    diagnosis_code = db.Column(db.String(256), nullable=True)  # Diagnosis code (if applicable)
+    status = db.Column(db.String(64), nullable=False, default="planned")  # e.g., planned, completed
+    location = db.Column(db.String(256), nullable=True)  # Location of the visit
+    notes = db.Column(db.Text, nullable=True)  # Additional notes
 
     # Relationships
     patient = relationship('Patient', back_populates='visits')
@@ -193,8 +196,65 @@ class Visit(UserMixin, db.Model):
     def __repr__(self):
         return f'<Visit {self.id} for Patient {self.patient_id}>'
 
+    def to_dict(self):
+        """Convert the Visit object to a dictionary for JSON serialization."""
+        return {
+            "id": self.id,
+            "patient_id": self.patient_id,
+            "doctor_id": self.doctor_id,
+            "visit_date": self.visit_date.isoformat() if self.visit_date else None,
+            "reason_code": self.reason_code,
+            "diagnosis_code": self.diagnosis_code,
+            "status": self.status,
+            "location": self.location,
+            "notes": self.notes
+        }
 
-class AllergyIntolerance(db.Model):
+    @staticmethod
+    def get_reason_codes():
+        """Retrieve predefined reason codes."""
+        return [
+            {"code": "185349003", "display": "Routine health check"},
+            {"code": "386661006", "display": "Fever"},
+            {"code": "162864005", "display": "Cough"},
+            {"code": "84229001", "display": "Headache"},
+            {"code": "422587007", "display": "Follow-up examination"},
+            {"code": "281647001", "display": "Postoperative follow-up"},
+            {"code": "183460006", "display": "Diabetes management"},
+            {"code": "308335008", "display": "Hypertension monitoring"},
+            {"code": "225323000", "display": "Preventive care"},
+            {"code": "409586006", "display": "Immunization"},
+            {"code": "161832001", "display": "Physical therapy visit"},
+            {"code": "168537006", "display": "Chest pain"},
+            {"code": "182888003", "display": "Injury follow-up"}
+        ]
+
+    @staticmethod
+    def get_status_codes():
+        """Retrieve predefined status codes."""
+        return [
+            {"code": "planned", "display": "Planned"},
+            {"code": "in-progress", "display": "In Progress"},
+            {"code": "completed", "display": "Completed"},
+            {"code": "cancelled", "display": "Cancelled"}
+        ]
+
+class Observation(UserMixin,db.Model):
+    __tablename__ = 'observation'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    patient_id = db.Column(db.String(50), db.ForeignKey('patient_basic.id'), nullable=False)
+    visit_id = db.Column(db.Integer, db.ForeignKey('visits.id'), nullable=False)
+    code = db.Column(db.String(100), nullable=False)
+    value = db.Column(db.String(50), nullable=True)
+    status = db.Column(db.String(20), nullable=True)
+    #effectiveDateTime = db.Column(db.Date, nullable=True)
+
+    # Relationships
+    patient = relationship('Patient', back_populates='observations')
+    visit = relationship('Visit', back_populates='observations', foreign_keys=[visit_id])
+
+class AllergyIntolerance(UserMixin,db.Model):
     __tablename__ = 'allergy_intolerance'
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -209,24 +269,8 @@ class AllergyIntolerance(db.Model):
     patient = relationship('Patient', back_populates='allergies')
     visit = relationship('Visit', back_populates='allergies', foreign_keys=[visit_id])
 
-
-class Observation(db.Model):
-    __tablename__ = 'observation'
-
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    patient_id = db.Column(db.String(50), db.ForeignKey('patient_basic.id'), nullable=False)
-    visit_id = db.Column(db.Integer, db.ForeignKey('visits.id'), nullable=False)
-    code = db.Column(db.String(100), nullable=False)
-    value = db.Column(db.String(50), nullable=True)
-    status = db.Column(db.String(20), nullable=True)
-    effectiveDateTime = db.Column(db.DateTime, nullable=True)
-
-    # Relationships
-    patient = relationship('Patient', back_populates='observations')
-    visit = relationship('Visit', back_populates='observations', foreign_keys=[visit_id])
-
 # Medication Model (FHIR: MedicationStatement)
-class MedicationStatement(db.Model):
+class MedicationStatement(UserMixin,db.Model):
     __tablename__ = 'medication_statement'
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -242,9 +286,9 @@ class MedicationStatement(db.Model):
     patient = relationship('Patient', back_populates='medications')
     visit = relationship('Visit', back_populates='medications', foreign_keys=[visit_id])
 
-
+    
 # Appointment Model (FHIR: Appointment)
-class Appointment(db.Model):
+class Appointment(UserMixin,db.Model):
     __tablename__ = 'appointment'
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -263,7 +307,7 @@ class Appointment(db.Model):
 
 
 # Immunization Model (FHIR: Immunization)
-class Immunization(db.Model):
+class Immunization(UserMixin,db.Model):
     __tablename__ = 'immunization'
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -281,7 +325,7 @@ class Immunization(db.Model):
     visit = relationship('Visit', back_populates='immunizations', foreign_keys=[visit_id])
 
 # Procedure Model (FHIR: Procedure)
-class Procedure(db.Model):
+class Procedure(UserMixin,db.Model):
     __tablename__ = 'procedure'
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -300,7 +344,7 @@ class Procedure(db.Model):
 
 
 # Vitals Model (FHIR: Observation for Vitals)
-class Vitals(db.Model):
+class Vitals(UserMixin,db.Model):
     __tablename__ = 'vitals'
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -317,7 +361,7 @@ class Vitals(db.Model):
 
     
 # Medical History Model (Custom: History)
-class MedicalHistory(db.Model):
+class MedicalHistory(UserMixin,db.Model):
     __tablename__ = 'medical_history'
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)

@@ -1,6 +1,6 @@
 # forms.py
 from flask_wtf import FlaskForm
-from wtforms import StringField,DateTimeField,TextAreaField, DateField, PasswordField, SelectField, TelField, SubmitField, HiddenField, EmailField, IntegerField, RadioField
+from wtforms import StringField,FormField,FieldList,DateTimeField,TextAreaField, DateField, PasswordField, SelectField, TelField, SubmitField, HiddenField, EmailField, IntegerField, RadioField
 from wtforms.validators import DataRequired, Email, EqualTo, Length, Regexp, NumberRange, Optional
 from datetime import date
 
@@ -95,11 +95,21 @@ class PatientUpdateForm(FlaskForm):
     home_address = StringField('Home Address', validators=[DataRequired()])
     submit = SubmitField('Save Changes')
 
+class MedicationStatementForm(FlaskForm):
+    visit_id = HiddenField('Visit ID', validators=[DataRequired()])
+    patient_id = HiddenField('Patient ID', validators=[DataRequired()])
+    medication = StringField('Medication', validators=[DataRequired(), Length(max=100)])
+    dosage = StringField('Dosage', validators=[Optional(), Length(max=50)])
+    status = SelectField('Status', choices=[('active', 'Active'), ('completed', 'Completed'), ('entered-in-error', 'Entered in Error'), ('intended', 'Intended')], validators=[Optional()])
+    effectivePeriod_start = DateField('Effective Start Date', format='%Y-%m-%d',validators=[Optional()])
+    effectivePeriod_end = DateField('Effective End Date', format='%Y-%m-%d',validators=[Optional()])
+
 class VisitForm(FlaskForm):
     patient_id = HiddenField('Patient ID', validators=[DataRequired()])
     doctor_id = HiddenField('Doctor ID', validators=[DataRequired()])
     visit_date = DateTimeField('Visit Date', validators=[Optional()], format='%Y-%m-%d %H:%M:%S')
     visit_type = StringField('Visit Type', validators=[Optional(), Length(max=50)])
+    medications = FieldList(FormField(MedicationStatementForm), min_entries=1, max_entries=10)
     notes = TextAreaField('Notes', validators=[Optional()])
 
 class ObservationForm(FlaskForm):
@@ -108,7 +118,7 @@ class ObservationForm(FlaskForm):
     code = StringField('Observation Code', validators=[DataRequired(), Length(max=100)])
     value = StringField('Value', validators=[Optional(), Length(max=50)])
     status = SelectField('Status', choices=[('registered', 'Registered'), ('preliminary', 'Preliminary'), ('final', 'Final')], validators=[Optional()])
-    effectiveDateTime = DateTimeField('Effective DateTime', validators=[Optional()], format='%Y-%m-%d %H:%M:%S')
+    #effectiveDateTime = DateField('Effective DateTime',format='%Y-%m-%d', validators=[Optional()])
 
 class AllergyIntoleranceForm(FlaskForm):
     visit_id = HiddenField('Visit ID', validators=[DataRequired()])
@@ -118,14 +128,7 @@ class AllergyIntoleranceForm(FlaskForm):
     verification_status = SelectField('Verification Status', choices=[('unconfirmed', 'Unconfirmed'), ('confirmed', 'Confirmed')], validators=[Optional()])
     severity = SelectField('Severity', choices=[('mild', 'Mild'), ('moderate', 'Moderate'), ('severe', 'Severe')], validators=[Optional()])
 
-class MedicationStatementForm(FlaskForm):
-    visit_id = HiddenField('Visit ID', validators=[DataRequired()])
-    patient_id = HiddenField('Patient ID', validators=[DataRequired()])
-    medication = StringField('Medication', validators=[DataRequired(), Length(max=100)])
-    dosage = StringField('Dosage', validators=[Optional(), Length(max=50)])
-    status = SelectField('Status', choices=[('active', 'Active'), ('completed', 'Completed'), ('entered-in-error', 'Entered in Error'), ('intended', 'Intended')], validators=[Optional()])
-    effectivePeriod_start = DateField('Effective Start Date', validators=[Optional()])
-    effectivePeriod_end = DateField('Effective End Date', validators=[Optional()])
+
 
 class ProcedureForm(FlaskForm):
     visit_id = HiddenField('Visit ID', validators=[DataRequired()])
@@ -172,7 +175,17 @@ class AppointmentForm(FlaskForm):
     reason = TextAreaField('Reason', validators=[Optional(), Length(max=255)])
 
 class AddVisitForm(FlaskForm):
-    visit_type = SelectField('Visit Type', choices=[('checkup', 'Checkup'), ('emergency', 'Emergency')], validators=[DataRequired()])
     visit_date = DateField('Visit Date', default=date.today, validators=[DataRequired()])
-    notes = TextAreaField('Notes', validators=[Length(max=500)])
-    submit = SubmitField('Add Visit')
+    # Will be dynamically populated
+    reason_code = SelectField("Reason Code",choices=[], validators=[Optional()])
+    diagnosis_code = StringField("Diagnosis Code",validators=[Optional(), Length(max=256)])
+    status = SelectField("Status",choices=[],validators=[DataRequired()] )
+    location = SelectField("Location", choices=[],  validators=[Optional()])
+    notes = TextAreaField("Notes", validators=[Optional()]  )
+    submit = SubmitField('Add Visit') 
+
+    @staticmethod
+    def populate_dynamic_choices(form):
+        """Populate dynamic choices for reason_code, status, and location."""
+        form.reason_code.choices = [(item["code"], item["display"]) for item in Visit.get_reason_codes()]
+        form.status.choices = [(item["code"], item["display"]) for item in Visit.get_status_codes()]

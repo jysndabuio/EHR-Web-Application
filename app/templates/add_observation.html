@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Add Observation for Visit on {{ visit.visit_date.strftime('%Y-%m-%d') }}</h2>
+    <form method="POST">
+        {{ observation_form.hidden_tag() }}
+
+            <!-- Hidden Fields -->
+        {{ observation_form.visit_id }}
+        {{ observation_form.patient_id }}
+
+        
+        <div class="mb-3">
+            {{ observation_form.code.label(class="form-label") }}
+            {{ observation_form.code(class="form-control") }}
+            {% for error in observation_form.code.errors %}
+                <div class="text-danger">{{ error }}</div>
+            {% endfor %}
+        </div>
+        <div class="mb-3">
+            {{ observation_form.value.label(class="form-label") }}
+            {{ observation_form.value(class="form-control") }}
+            {% for error in observation_form.value.errors %}
+                <div class="text-danger">{{ error }}</div>
+            {% endfor %}
+        </div>
+        <div class="mb-3">
+            {{ observation_form.status.label(class="form-label") }}
+            {{ observation_form.status(class="form-select") }}
+            {% for error in observation_form.status.errors %}
+                <div class="text-danger">{{ error }}</div>
+            {% endfor %}
+        </div>
+
+        <button type="submit" class="btn btn-primary">Add Observation</button>
+        <a href="{{ url_for('main.view_visit', visit_id=visit.id) }}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}
