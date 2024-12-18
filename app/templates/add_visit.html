@@ -6,7 +6,6 @@
     <form method="POST">
         {{ visit_form.hidden_tag() }}
 
-        <!-- Visit Section -->
         <!-- Reason Code -->
         <div class="mb-3">
             {{ visit_form.reason_code.label(class="form-label") }}
@@ -34,15 +33,34 @@
             {% endfor %}
         </div>
 
+        <!-- Class Code -->
+        <div class="mb-3">
+            {{ visit_form.class_code.label(class="form-label") }}
+            {{ visit_form.class_code(class="form-select") }}
+            {% for error in visit_form.class_code.errors %}
+                <div class="text-danger">{{ error }}</div>
+            {% endfor %}
+        </div>
+
+        <!-- Priority -->
+        <div class="mb-3">
+            {{ visit_form.priority.label(class="form-label") }}
+            {{ visit_form.priority(class="form-select") }}
+            {% for error in visit_form.priority.errors %}
+                <div class="text-danger">{{ error }}</div>
+            {% endfor %}
+        </div>
+
         <!-- Location -->
         <div class="mb-3">
             {{ visit_form.location.label(class="form-label") }}
-            {{ visit_form.location(class="form-control") }}
+            {{ visit_form.location(class="form-select") }}
             {% for error in visit_form.location.errors %}
                 <div class="text-danger">{{ error }}</div>
             {% endfor %}
         </div>
 
+        <!-- Visit Date -->
         <div class="mb-3">
             {{ visit_form.visit_date.label(class="form-label") }}
             {{ visit_form.visit_date(class="form-control") }}
@@ -50,7 +68,8 @@
                 <div class="text-danger">{{ error }}</div>
             {% endfor %}
         </div>
-        
+
+        <!-- Notes -->
         <div class="mb-3">
             {{ visit_form.notes.label(class="form-label") }}
             {{ visit_form.notes(class="form-control") }}
@@ -58,6 +77,7 @@
                 <div class="text-danger">{{ error }}</div>
             {% endfor %}
         </div>
+        
         <hr>
         <button type="submit" class="btn btn-primary">Submit</button>
         <a href="{{ url_for('main.view_patient', patient_id=patient.id) }}" class="btn btn-secondary">Cancel</a>

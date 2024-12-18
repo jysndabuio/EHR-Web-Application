@@ -176,12 +176,11 @@ class AppointmentForm(FlaskForm):
 
 class AddVisitForm(FlaskForm):
     visit_date = DateField('Visit Date', default=date.today, validators=[DataRequired()])
-    # Will be dynamically populated
-    reason_code = SelectField("Reason Code",choices=[], validators=[Optional()])
-    diagnosis_code = StringField("Diagnosis Code",validators=[Optional(), Length(max=256)])
-    status = SelectField("Status",choices=[],validators=[DataRequired()] )
-    location = SelectField("Location", choices=[],  validators=[Optional()])
-    notes = TextAreaField("Notes", validators=[Optional()]  )
-    submit = SubmitField('Add Visit') 
-
-    
+    reason_code = SelectField("Reason Code", choices=[], validators=[Optional()])
+    diagnosis_code = StringField("Diagnosis Code", validators=[Optional(), Length(max=256)])
+    status = SelectField("Status", choices=[], validators=[DataRequired()])
+    class_code = SelectField("Class Code", choices=[], validators=[DataRequired()])
+    priority = SelectField("Priority", choices=[], validators=[Optional()])
+    location = SelectField("Location", choices=[], validators=[Optional()])
+    notes = TextAreaField("Notes", validators=[Optional(), Length(max=1000)])
+    submit = SubmitField('Add Visit')

@@ -151,7 +151,7 @@ def doctor_patients():
     return render_template('doctor_patients.html', 
                            patients=patients, 
                            show_return_button=True, 
-                           return_url=url_for('main.doctor_dashboard'))
+                           return_url=request.referrer)
 
 
 @bp.route('/doctor/patient/<string:patient_id>', methods=['GET', 'POST'])
@@ -184,7 +184,7 @@ def view_patient(patient_id):
                            latest_appointment=latest_appointment,
                            sorted_visits = sorted_visits,
                            show_return_button=True, 
-                            return_url=url_for('main.doctor_dashboard'))
+                            return_url=request.referrer)
 
 @bp.route('/visit/<int:visit_id>', methods=['GET'])
 @login_required
@@ -217,7 +217,7 @@ def view_visit(visit_id):
     return render_template('view_visit.html', 
                            visit=visit,
                            show_return_button=True, 
-                            return_url=url_for('main.doctor_dashboard'))
+                            return_url=request.referrer)
 
 @bp.route('/add_visit/<string:patient_id>', methods=['GET', 'POST'])
 @login_required
@@ -225,9 +225,12 @@ def add_visit(patient_id):
     patient = Patient.query.get_or_404(patient_id)
     visit_form = AddVisitForm()
 
-     # Populate dynamic fields from model methods
+    # Populate dynamic fields using model methods
     visit_form.reason_code.choices = [(item["code"], item["display"]) for item in Visit.get_reason_codes()]
     visit_form.status.choices = [(item["code"], item["display"]) for item in Visit.get_status_codes()]
+    visit_form.class_code.choices = [(item["code"], item["display"]) for item in Visit.get_class_codes()]
+    visit_form.priority.choices = [(item["code"], item["display"]) for item in Visit.get_priority_codes()]
+    visit_form.location.choices = [(item["code"], item["display"]) for item in Visit.get_locations()]
 
     if visit_form.validate_on_submit():
         # Create and save a new visit
@@ -236,7 +239,10 @@ def add_visit(patient_id):
             doctor_id=current_user.id,  # Assuming logged-in user is the doctor
             visit_date=visit_form.visit_date.data,
             reason_code=visit_form.reason_code.data,
+            diagnosis_code=visit_form.diagnosis_code.data,
             status=visit_form.status.data,
+            class_code=visit_form.class_code.data,
+            priority=visit_form.priority.data,
             location=visit_form.location.data,
             notes=visit_form.notes.data
         )
@@ -250,7 +256,7 @@ def add_visit(patient_id):
                            visit_form=visit_form, 
                            patient=patient,
                            show_return_button=True, 
-                            return_url=url_for('main.doctor_dashboard'))
+                            return_url=request.referrer)
 
 
 @bp.route('/visit/<int:visit_id>/delete', methods=['POST'])
@@ -267,6 +273,18 @@ def delete_visit(visit_id):
     if not doctor_patient:
         flash('You do not have permission to delete this visit.', 'danger')
         return redirect(url_for('main.doctor_dashboard'))
+    
+    # Fetch patient associated with the visit
+    patient = Patient.query.get_or_404(visit.patient_id)
+
+    # Verify the name input
+    entered_name = request.form.get('patient_name', '').strip()
+    expected_name = f"{patient.firstname} {patient.lastname}"
+
+    # Case-insensitive comparison to ensure exact match
+    if entered_name.lower() != expected_name.lower():
+        flash('Patient name does not match. Deletion aborted.', 'danger')
+        return redirect(url_for('main.view_patient'))
 
     # Delete the visit
     db.session.delete(visit)
@@ -353,7 +371,8 @@ def add_observation(visit_id):
 
     return render_template('add_observation.html', 
                            observation_form=observation_form, 
-                           visit=visit)
+                           visit=visit,
+                           return_url=request.referrer)
 
 
 
@@ -385,7 +404,7 @@ def edit_observation(observation_id):
                            form=form, 
                            observation=observation,
                            show_return_button=True, 
-                            return_url=url_for('main.doctor_dashboard'))
+                            return_url=request.referrer)
 
 
 @bp.route('/patient/<string:patient_id>/edit', methods=['GET', 'POST'])
@@ -455,7 +474,7 @@ def edit_visit(visit_id):
                            form=form, 
                            visit=visit,
                            show_return_button=True, 
-                            return_url=url_for('main.doctor_dashboard'))
+                            return_url=request.referrer)
 
 
 
@@ -498,7 +517,7 @@ def add_patient():
     return render_template('add_patient.html', 
                            patient_form=patient_form,
                            show_return_button=True, 
-                            return_url=url_for('main.doctor_dashboard'))
+                            return_url=request.referrer)
 
 
 @bp.route('/account', methods=['GET', 'POST'])

@@ -185,7 +185,9 @@ class Visit(UserMixin, db.Model):
     visit_date = db.Column(db.DateTime, nullable=False)  # Date and time of the visit
     reason_code = db.Column(db.String(256), nullable=True)  # Reason for the visit (FHIR codeable concept)
     diagnosis_code = db.Column(db.String(256), nullable=True)  # Diagnosis code (if applicable)
-    status = db.Column(db.String(64), nullable=False, default="planned")  # e.g., planned, completed
+    status = db.Column(db.String(64), nullable=False, default="planned")  # e.g., planned, in-progress, completed
+    class_code = db.Column(db.String(64), nullable=True, default="outpatient")  # Class: outpatient, inpatient, virtual
+    priority = db.Column(db.String(20), nullable=True)  # Priority: routine, urgent, stat
     location = db.Column(db.String(256), nullable=True)  # Location of the visit
     notes = db.Column(db.Text, nullable=True)  # Additional notes
 
@@ -193,13 +195,13 @@ class Visit(UserMixin, db.Model):
     patient = relationship('Patient', back_populates='visits')
     doctor = relationship('User', back_populates='visits')
     observations = relationship('Observation', back_populates='visit', cascade='all, delete-orphan', foreign_keys='Observation.visit_id')
-    procedures = relationship('Procedure', back_populates='visit',cascade='all, delete-orphan', foreign_keys='Procedure.visit_id')
-    medications = relationship('MedicationStatement', back_populates='visit',cascade='all, delete-orphan',foreign_keys='MedicationStatement.visit_id')
-    immunizations = relationship('Immunization', back_populates='visit',cascade='all, delete-orphan', foreign_keys='Immunization.visit_id')
+    procedures = relationship('Procedure', back_populates='visit', cascade='all, delete-orphan', foreign_keys='Procedure.visit_id')
+    medications = relationship('MedicationStatement', back_populates='visit', cascade='all, delete-orphan', foreign_keys='MedicationStatement.visit_id')
+    immunizations = relationship('Immunization', back_populates='visit', cascade='all, delete-orphan', foreign_keys='Immunization.visit_id')
     vitals = relationship('Vitals', back_populates='visit', cascade='all, delete-orphan', foreign_keys='Vitals.visit_id')
     allergies = relationship('AllergyIntolerance', back_populates='visit', cascade='all, delete-orphan', foreign_keys='AllergyIntolerance.visit_id')
-    medical_histories = relationship('MedicalHistory', back_populates='visit',cascade='all, delete-orphan',foreign_keys='MedicalHistory.visit_id')
-    appointments = relationship('Appointment', back_populates='visit', cascade='all, delete-orphan',foreign_keys='Appointment.visit_id')
+    medical_histories = relationship('MedicalHistory', back_populates='visit', cascade='all, delete-orphan', foreign_keys='MedicalHistory.visit_id')
+    appointments = relationship('Appointment', back_populates='visit', cascade='all, delete-orphan', foreign_keys='Appointment.visit_id')
 
     def __repr__(self):
         return f'<Visit {self.id} for Patient {self.patient_id}>'
@@ -214,6 +216,8 @@ class Visit(UserMixin, db.Model):
             "reason_code": self.reason_code,
             "diagnosis_code": self.diagnosis_code,
             "status": self.status,
+            "class_code": self.class_code,
+            "priority": self.priority,
             "location": self.location,
             "notes": self.notes
         }
@@ -245,6 +249,34 @@ class Visit(UserMixin, db.Model):
             {"code": "in-progress", "display": "In Progress"},
             {"code": "completed", "display": "Completed"},
             {"code": "cancelled", "display": "Cancelled"}
+        ]
+
+    @staticmethod
+    def get_class_codes():
+        """Retrieve predefined class codes."""
+        return [
+            {"code": "outpatient", "display": "Outpatient"},
+            {"code": "inpatient", "display": "Inpatient"},
+            {"code": "virtual", "display": "Virtual"}
+        ]
+
+    @staticmethod
+    def get_priority_codes():
+        """Retrieve predefined priority codes."""
+        return [
+            {"code": "routine", "display": "Routine"},
+            {"code": "urgent", "display": "Urgent"},
+            {"code": "stat", "display": "Stat"}
+        ]
+    
+    @staticmethod
+    def get_locations():
+        """Retrieve predefined locations."""
+        return [
+            {"code": "clinic_a", "display": "Clinic A"},
+            {"code": "clinic_b", "display": "Clinic B"},
+            {"code": "virtual", "display": "Virtual"},
+            {"code": "hospital_room_101", "display": "Hospital Room 101"}
         ]
 
 class Observation(UserMixin,db.Model):
