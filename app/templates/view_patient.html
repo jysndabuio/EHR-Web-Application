@@ -37,11 +37,17 @@
     {% endif %}
 
     <h3>Visits</h3>
-    {% for visit in patient.visits %}
+    {% for visit in sorted_visits %}
     <div class="card mb-3">
         <div class="card-header">
             Visit on {{ visit.visit_date.strftime('%Y-%m-%d') }}
-            <a href="{{ url_for('main.view_visit', visit_id=visit.id) }}" class="btn btn-info btn-sm float-right">View Details</a>
+            <div class="float-right">
+                <a href="{{ url_for('main.view_visit', visit_id=visit.id) }}" class="btn btn-info btn-sm">View Details</a>
+                <form action="{{ url_for('main.delete_visit', visit_id=visit.id) }}" method="POST" style="display: inline-block;">
+                    <button type="submit" class="btn btn-danger btn-sm"
+                            onclick="return confirm('Are you sure you want to delete this visit?');">Delete</button>
+                </form>
+            </div>
         </div>
         <div class="card-body">
             <p><strong>Status:</strong> {{ visit.status }}</p>

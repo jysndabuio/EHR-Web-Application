@@ -101,22 +101,58 @@ def doctor_dashboard():
 
     return render_template('doctor_dashboard.html')
 
-@bp.route('/patients', methods=['GET', 'POST'])
+@bp.route('/patients', methods=['GET'])
 @login_required
 def doctor_patients():
     if current_user.role != 'doctor':
         flash('Unauthorized access!', 'danger')
         return redirect(url_for('/'))
 
+    # Fetch search and filter parameters
+    search_query = request.args.get('search', '').strip()
+    filter_by = request.args.get('filter_by', 'recent')  # Default filter: recent
+    sort_order = request.args.get('sort_order', 'desc')  # Default order: descending
+    age_range = request.args.get('age_range')  # Example: "0-20", "21-40", etc.
+    gender_filter = request.args.get('gender')  # Example: "Male", "Female", "Other"
+
+
     # Fetch patients linked to the logged-in doctor
     doctor_id = current_user.id
     doctor_patients = DoctorPatient.query.filter_by(doctor_id=doctor_id).all()
-    patients = [relation.patient for relation in doctor_patients]
+    patients_query = db.session.query(Patient).filter(Patient.id.in_([relation.patient_id for relation in doctor_patients]))
+
+    # Apply search filter
+    if search_query:
+        patients_query = patients_query.filter(
+            (Patient.patient_id.like(f"%{search_query}%")) |
+            (Patient.firstname.like(f"%{search_query}%")) |
+            (Patient.lastname.like(f"%{search_query}%"))
+        )
+
+    # Apply age range filter
+    if age_range:
+        min_age, max_age = map(int, age_range.split('-'))
+        patients_query = patients_query.filter(Patient.age.between(min_age, max_age))
+
+    # Apply gender filter
+    if gender_filter:
+        patients_query = patients_query.filter(Patient.gender == gender_filter)
+
+    # Apply sorting filters
+    if filter_by == 'recent':
+        patients_query = patients_query.order_by(Patient.created_at.desc() if sort_order == 'desc' else Patient.created_at.asc())
+    elif filter_by == 'name':
+        patients_query = patients_query.order_by(Patient.firstname.asc() if sort_order == 'asc' else Patient.firstname.desc())
+
+    # Get the final list of patients
+    patients = patients_query.all()
+
 
     return render_template('doctor_patients.html', 
                            patients=patients, 
                            show_return_button=True, 
                            return_url=url_for('main.doctor_dashboard'))
+
 
 @bp.route('/doctor/patient/<string:patient_id>', methods=['GET', 'POST'])
 @login_required
@@ -133,10 +169,20 @@ def view_patient(patient_id):
         return redirect(url_for('main.doctor_dashboard'))
     # Get the latest appointment 
     latest_appointment = sorted(patient.appointments, key=lambda x: x.start, reverse=True)[0] if patient.appointments else None
-    
+    reason_code_map = {item["code"]: item["display"] for item in Visit.get_reason_codes()}
+
+    # Sort visits in descending order by visit_date
+    sorted_visits = sorted(patient.visits, key=lambda visit: visit.visit_date, reverse=True)
+
+   # Add the description to each visit
+    for visit in patient.visits:
+        visit.reason_code_description = reason_code_map.get(visit.reason_code, "Unknown Reason")
+
+
     return render_template('view_patient.html', 
                            patient=patient, 
                            latest_appointment=latest_appointment,
+                           sorted_visits = sorted_visits,
                            show_return_button=True, 
                             return_url=url_for('main.doctor_dashboard'))
 
@@ -162,7 +208,7 @@ def view_visit(visit_id):
     if not doctor_patient:
         flash('You do not have permission to view this visit.', 'danger')
         return redirect(url_for('main.doctor_dashboard'))
-    
+
     reason_code_map = {item["code"]: item["display"] for item in Visit.get_reason_codes()}
 
     # Add the description to the visit object dynamically
@@ -205,6 +251,60 @@ def add_visit(patient_id):
                            patient=patient,
                            show_return_button=True, 
                             return_url=url_for('main.doctor_dashboard'))
+
+
+@bp.route('/visit/<int:visit_id>/delete', methods=['POST'])
+@login_required
+def delete_visit(visit_id):
+    if current_user.role != 'doctor':
+        flash('Access unauthorized.', 'danger')
+        return redirect(url_for('login'))
+
+    visit = Visit.query.get_or_404(visit_id)
+
+    # Check if the doctor is associated with the patient
+    doctor_patient = DoctorPatient.query.filter_by(doctor_id=current_user.id, patient_id=visit.patient_id).first()
+    if not doctor_patient:
+        flash('You do not have permission to delete this visit.', 'danger')
+        return redirect(url_for('main.doctor_dashboard'))
+
+    # Delete the visit
+    db.session.delete(visit)
+    db.session.commit()
+    flash('Visit deleted successfully.', 'success')
+    return redirect(url_for('main.view_patient', patient_id=visit.patient_id))
+
+@bp.route('/patient/<string:patient_id>/delete', methods=['POST'])
+@login_required
+def delete_patient(patient_id):
+    if current_user.role != 'doctor':
+        flash('Access unauthorized.', 'danger')
+        return redirect(url_for('login'))
+
+    patient = Patient.query.get_or_404(patient_id)
+
+    # Check if the doctor is associated with the patient
+    doctor_patient = DoctorPatient.query.filter_by(doctor_id=current_user.id, patient_id=patient.id).first()
+    if not doctor_patient:
+        flash('You do not have permission to delete this patient.', 'danger')
+        return redirect(url_for('main.doctor_dashboard'))
+    
+    # Verify the name input
+    entered_name = request.form.get('patient_name', '').strip()
+    expected_name = f"{patient.firstname} {patient.lastname}"
+
+    # Case insensitive comparison to ensure exact match
+    if entered_name.lower() != entered_name.lower():
+        flash('Patient name does not match. Deletion aborted.', 'danger')
+        return redirect(url_for('main.doctor_patients'))
+
+    # Delete the patient
+    db.session.delete(patient)
+    db.session.commit()
+    flash('Patient deleted successfully.', 'success')
+    return redirect(url_for('main.doctor_dashboard'))
+
+    
 
 @bp.route('/visit/<int:visit_id>/add_observation', methods=['GET', 'POST'])
 @login_required

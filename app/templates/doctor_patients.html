@@ -5,34 +5,124 @@
 {% block content %}
 <h2>Welcome, Dr. {{ current_user.firstname }} {{ current_user.lastname }}</h2>
     <h3>Your Patients</h3>
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>Patient ID</th>
-                <th>Name</th>
-                <th>Age</th>
-                <th>Contact Number</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for patient in patients %}
-            <tr>
-                <td>{{ patient.patient_id }}</td>
-                <td>{{ patient.firstname }} {{ patient.lastname }}</td>
-                <td>{{ patient.age }}</td>
-                <td>{{ patient.contact_number }}</td>
-                <td>
-                    <a href="{{ url_for('main.view_patient', patient_id=patient.id) }}" class="btn btn-info btn-sm">View</a>
-                </td>
-            </tr>
-            {% else %}
-            <tr>
-                <td colspan="5">No patients assigned.</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <div>  
+        <!-- Filter Form -->
+    <form method="GET" action="{{ url_for('main.doctor_patients') }}" class="d-flex flex-wrap align-items-center gap-2 mb-4">
+        <div class="row w-100">
+            <!-- Search Input -->
+            <div class="col-md-3">
+                <input 
+                    type="text" 
+                    name="search" 
+                    class="form-control" 
+                    placeholder="Search by ID or Name" 
+                    value="{{ request.args.get('search', '') }}">
+            </div>
+
+            <!-- Gender Filter -->
+            <div class="col-md-2">
+                <select name="gender" class="form-select">
+                    <option value="">All Genders</option>
+                    <option value="Male" {% if request.args.get('gender') == 'Male' %}selected{% endif %}>Male</option>
+                    <option value="Female" {% if request.args.get('gender') == 'Female' %}selected{% endif %}>Female</option>
+                    <option value="Other" {% if request.args.get('gender') == 'Other' %}selected{% endif %}>Other</option>
+                </select>
+            </div>
+
+            <!-- Age Range Filter -->
+            <div class="col-md-2">
+                <select name="age_range" class="form-select">
+                    <option value="">All Ages</option>
+                    <option value="0-20" {% if request.args.get('age_range') == '0-20' %}selected{% endif %}>0-20</option>
+                    <option value="21-40" {% if request.args.get('age_range') == '21-40' %}selected{% endif %}>21-40</option>
+                    <option value="41-60" {% if request.args.get('age_range') == '41-60' %}selected{% endif %}>41-60</option>
+                    <option value="60+" {% if request.args.get('age_range') == '60+' %}selected{% endif %}>60+</option>
+                </select>
+            </div>
+
+            <!-- Filter By -->
+            <div class="col-md-2">
+                <select name="filter_by" class="form-select">
+                    <option value="recent" {% if request.args.get('filter_by') == 'recent' %}selected{% endif %}>Recently Added</option>
+                    <option value="name" {% if request.args.get('filter_by') == 'name' %}selected{% endif %}>Name</option>
+                </select>
+            </div>
+
+            <!-- Sort Order -->
+            <div class="col-md-2">
+                <select name="sort_order" class="form-select">
+                    <option value="desc" {% if request.args.get('sort_order') == 'desc' %}selected{% endif %}>Descending</option>
+                    <option value="asc" {% if request.args.get('sort_order') == 'asc' %}selected{% endif %}>Ascending</option>
+                </select>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="col-md-1">
+                <button type="submit" class="btn btn-primary w-100">Apply</button>
+            </div>
+        </div>
+    </form>
+        
+        
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Patient ID</th>
+                    <th>Name</th>
+                    <th>Age</th>
+                    <th>Contact Number</th>
+                    <th>Actions</th>
+    
+                </tr>
+            </thead>
+            <tbody>
+                {% for patient in patients %}
+                <tr>
+                    <td>{{ patient.patient_id }}</td>
+                    <td>{{ patient.firstname }} {{ patient.lastname }}</td>
+                    <td>{{ patient.age }}</td>
+                    <td>{{ patient.contact_number }}</td>
+                    <td>
+                        <a href="{{ url_for('main.view_patient', patient_id=patient.id) }}" class="btn btn-info btn-sm">View</a>
+                    </td>
+                    <td>
+                        <!-- Delete Button -->
+                        <button class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deletePatientModal{{ patient.id }}">
+                            Delete
+                        </button>
+            
+                        <!-- Confirmation Modal -->
+                        <div class="modal fade" id="deletePatientModal{{ patient.id }}" tabindex="-1" aria-labelledby="deletePatientModalLabel{{ patient.id }}" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <form method="POST" action="{{ url_for('main.delete_patient', patient_id=patient.id) }}">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="deletePatientModalLabel{{ patient.id }}">Confirm Patient Deletion</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p>To confirm deletion, please enter the full name of the patient:</p>
+                                            <input type="text" name="patient_name" class="form-control" placeholder="Patient Name" required>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                            <button type="submit" class="btn btn-danger">Delete Patient</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5">No patients assigned.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
         <!-- Add Patient Button -->
 <a href="{{ url_for('main.add_patient') }}" class="btn btn-success mt-4">Add New Patient</a>
 

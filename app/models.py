@@ -115,15 +115,16 @@ class Patient(UserMixin, db.Model):
     created_at = db.Column(db.DateTime, default=db.func.now())
 
     # Relationships
-    doctor_relationships = relationship('DoctorPatient', back_populates='patient', lazy='dynamic')
-    immunizations = relationship('Immunization', back_populates='patient', lazy='dynamic')
-    procedures = relationship('Procedure', back_populates='patient', lazy='dynamic')
-    vitals = relationship('Vitals', back_populates='patient', lazy='dynamic')
-    medical_history = relationship('MedicalHistory', back_populates='patient', lazy='dynamic')
-    allergies = relationship('AllergyIntolerance', back_populates='patient', lazy='dynamic')
-    observations = relationship('Observation', back_populates='patient', lazy='dynamic')
-    medications = relationship('MedicationStatement', back_populates='patient', lazy='dynamic')
-    appointments = relationship('Appointment', back_populates='patient', lazy='select')
+    #cascade='all, delete-orphan' will delete all child information link to this patient
+    doctor_relationships = relationship('DoctorPatient', back_populates='patient', cascade='all, delete-orphan', lazy='dynamic')
+    immunizations = relationship('Immunization', back_populates='patient', cascade='all, delete-orphan',  lazy='dynamic')
+    procedures = relationship('Procedure', back_populates='patient', cascade='all, delete-orphan', lazy='dynamic')
+    vitals = relationship('Vitals', back_populates='patient',cascade='all, delete-orphan', lazy='dynamic')
+    medical_history = relationship('MedicalHistory', back_populates='patient', cascade='all, delete-orphan', lazy='dynamic')
+    allergies = relationship('AllergyIntolerance', back_populates='patient', cascade='all, delete-orphan', lazy='dynamic')
+    observations = relationship('Observation', back_populates='patient', cascade='all, delete-orphan',  lazy='dynamic')
+    medications = relationship('MedicationStatement', back_populates='patient', cascade='all, delete-orphan', lazy='dynamic')
+    appointments = relationship('Appointment', back_populates='patient',cascade='all, delete-orphan',  lazy='select')
     visits = relationship('Visit', back_populates='patient')
 
     @staticmethod
@@ -134,16 +135,20 @@ class Patient(UserMixin, db.Model):
         current_year = datetime.now().year
         prefix = f"MDHS-{current_year}-"
 
-        # Get the maximum number suffix used this year
-        last_patient = session.query(Patient).filter(
-            Patient.patient_id.like(f"{prefix}%")
-        ).order_by(Patient.id.desc()).first()
+        # Query the last patient_id for the current year, ordering by ID
+        last_patient = (
+            session.query(Patient)
+            .filter(Patient.patient_id.like(f"{prefix}%"))
+            .order_by(Patient.patient_id.desc())
+            .first()
+        )
 
         if last_patient and last_patient.patient_id:
             # Extract the numeric part and increment it
             last_number = int(last_patient.patient_id.split('-')[-1])
             new_number = last_number + 1
         else:
+            # Start from 1 if no patient exists
             new_number = 1
 
         # Format the patient ID with zero-padded suffix
@@ -153,8 +158,11 @@ class Patient(UserMixin, db.Model):
 @event.listens_for(Patient, 'before_insert')
 def set_patient_id(mapper, connection, target):
     if not target.patient_id:
+        # Use a scoped session to lock and ensure thread safety
         session = db.session
-        target.patient_id = Patient.generate_patient_id(session)
+
+        with session.begin_nested():
+            target.patient_id = Patient.generate_patient_id(session)
 
 # Updated Many-to-Many Doctor-Patient model
 class DoctorPatient(UserMixin, db.Model):
@@ -184,14 +192,14 @@ class Visit(UserMixin, db.Model):
     # Relationships
     patient = relationship('Patient', back_populates='visits')
     doctor = relationship('User', back_populates='visits')
-    observations = relationship('Observation', back_populates='visit', foreign_keys='Observation.visit_id')
-    procedures = relationship('Procedure', back_populates='visit', foreign_keys='Procedure.visit_id')
-    medications = relationship('MedicationStatement', back_populates='visit',foreign_keys='MedicationStatement.visit_id')
-    immunizations = relationship('Immunization', back_populates='visit', foreign_keys='Immunization.visit_id')
-    vitals = relationship('Vitals', back_populates='visit',  foreign_keys='Vitals.visit_id')
-    allergies = relationship('AllergyIntolerance', back_populates='visit',  foreign_keys='AllergyIntolerance.visit_id')
-    medical_histories = relationship('MedicalHistory', back_populates='visit',foreign_keys='MedicalHistory.visit_id')
-    appointments = relationship('Appointment', back_populates='visit', foreign_keys='Appointment.visit_id')
+    observations = relationship('Observation', back_populates='visit', cascade='all, delete-orphan', foreign_keys='Observation.visit_id')
+    procedures = relationship('Procedure', back_populates='visit',cascade='all, delete-orphan', foreign_keys='Procedure.visit_id')
+    medications = relationship('MedicationStatement', back_populates='visit',cascade='all, delete-orphan',foreign_keys='MedicationStatement.visit_id')
+    immunizations = relationship('Immunization', back_populates='visit',cascade='all, delete-orphan', foreign_keys='Immunization.visit_id')
+    vitals = relationship('Vitals', back_populates='visit', cascade='all, delete-orphan', foreign_keys='Vitals.visit_id')
+    allergies = relationship('AllergyIntolerance', back_populates='visit', cascade='all, delete-orphan', foreign_keys='AllergyIntolerance.visit_id')
+    medical_histories = relationship('MedicalHistory', back_populates='visit',cascade='all, delete-orphan',foreign_keys='MedicalHistory.visit_id')
+    appointments = relationship('Appointment', back_populates='visit', cascade='all, delete-orphan',foreign_keys='Appointment.visit_id')
 
     def __repr__(self):
         return f'<Visit {self.id} for Patient {self.patient_id}>'

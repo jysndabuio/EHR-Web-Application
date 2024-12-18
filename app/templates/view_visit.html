@@ -18,8 +18,7 @@
     </div>
 
     <h3>Observations</h3>
-    <a href="{{ url_for('main.add_observation', visit_id=visit.id) }}" class="btn btn-primary mt-3">Add New Visit</a>
-
+    
     {% for observation in visit.observations %}
     <div class="card mb-2">
         <div class="card-body">
@@ -32,6 +31,8 @@
     {% else %}
     <p>No observations recorded.</p>
     {% endfor %}
+    <hr>
+    <a href="{{ url_for('main.add_observation', visit_id=visit.id) }}" class="btn btn-primary mt-3">Add New Observation</a>
 
     <!-- Similar sections for Procedures, Medications, Vitals, Immunizations, Allergies, Medical Histories -->
 </div>

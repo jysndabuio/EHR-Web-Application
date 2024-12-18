@@ -184,8 +184,4 @@ class AddVisitForm(FlaskForm):
     notes = TextAreaField("Notes", validators=[Optional()]  )
     submit = SubmitField('Add Visit') 
 
-    @staticmethod
-    def populate_dynamic_choices(form):
-        """Populate dynamic choices for reason_code, status, and location."""
-        form.reason_code.choices = [(item["code"], item["display"]) for item in Visit.get_reason_codes()]
-        form.status.choices = [(item["code"], item["display"]) for item in Visit.get_status_codes()]
+    
