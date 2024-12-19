@@ -96,13 +96,21 @@ class PatientUpdateForm(FlaskForm):
     submit = SubmitField('Save Changes')
 
 class MedicationStatementForm(FlaskForm):
-    visit_id = HiddenField('Visit ID', validators=[DataRequired()])
+    visit_id = HiddenField('Visit ID', validators=[Optional()])
     patient_id = HiddenField('Patient ID', validators=[DataRequired()])
-    medication = StringField('Medication', validators=[DataRequired(), Length(max=100)])
-    dosage = StringField('Dosage', validators=[Optional(), Length(max=50)])
-    status = SelectField('Status', choices=[('active', 'Active'), ('completed', 'Completed'), ('entered-in-error', 'Entered in Error'), ('intended', 'Intended')], validators=[Optional()])
-    effectivePeriod_start = DateField('Effective Start Date', format='%Y-%m-%d',validators=[Optional()])
-    effectivePeriod_end = DateField('Effective End Date', format='%Y-%m-%d',validators=[Optional()])
+    medication_code = StringField('Medication Code', validators=[DataRequired(), Length(max=100)])
+    dosage_instruction = TextAreaField('Dosage Instruction', validators=[Optional()])
+    status = SelectField('Status', choices=[], validators=[Optional()])  # Empty choices
+    effectivePeriod_start = DateField('Start Date', validators=[Optional()])
+    effectivePeriod_end = DateField('End Date', validators=[Optional()])
+    adherence = SelectField('Adherence', choices=[], validators=[Optional()])  # Empty choices
+    reason_code = TextAreaField('Reason Code', validators=[Optional()])
+
+    # Dynamically set the choices for the status and adherence fields
+    #form.status.choices = [(status['code'], status['display']) for status in MedicationStatement.get_status_codes()]
+    #form.adherence.choices = [(adherence['code'], adherence['display']) for adherence in MedicationStatement.get_adherence_codes()]
+
+
 
 class VisitForm(FlaskForm):
     patient_id = HiddenField('Patient ID', validators=[DataRequired()])
@@ -119,14 +127,6 @@ class ObservationForm(FlaskForm):
     value = StringField('Value', validators=[Optional(), Length(max=50)])
     status = SelectField('Status', choices=[('registered', 'Registered'), ('preliminary', 'Preliminary'), ('final', 'Final')], validators=[Optional()])
     #effectiveDateTime = DateField('Effective DateTime',format='%Y-%m-%d', validators=[Optional()])
-
-class AllergyIntoleranceForm(FlaskForm):
-    visit_id = HiddenField('Visit ID', validators=[DataRequired()])
-    patient_id = HiddenField('Patient ID', validators=[DataRequired()])
-    substance = StringField('Substance', validators=[DataRequired(), Length(max=100)])
-    clinical_status = SelectField('Clinical Status', choices=[('active', 'Active'), ('inactive', 'Inactive'), ('resolved', 'Resolved')], validators=[Optional()])
-    verification_status = SelectField('Verification Status', choices=[('unconfirmed', 'Unconfirmed'), ('confirmed', 'Confirmed')], validators=[Optional()])
-    severity = SelectField('Severity', choices=[('mild', 'Mild'), ('moderate', 'Moderate'), ('severe', 'Severe')], validators=[Optional()])
 
 
 
@@ -147,6 +147,45 @@ class VitalsForm(FlaskForm):
     unit = StringField('Unit', validators=[DataRequired(), Length(max=20)])
     date_recorded = DateTimeField('Date Recorded', validators=[DataRequired()], format='%Y-%m-%d %H:%M:%S')
 
+class AllergyIntoleranceForm(FlaskForm):
+    visit_id = HiddenField('Visit ID', validators=[DataRequired()])
+    patient_id = HiddenField('Patient ID', validators=[DataRequired()])
+    substance = StringField('Substance', validators=[DataRequired(), Length(max=100)])
+    clinical_status = SelectField('Clinical Status', choices=[], validators=[Optional()])
+    verification_status = SelectField('Verification Status', choices=[], validators=[Optional()])
+    severity = SelectField('Severity', choices=[], validators=[Optional()])
+    category = SelectField('Category', choices=[], validators=[Optional()])
+    reaction = TextAreaField('Reaction', validators=[Optional()])
+    onset = DateField('Onset Date', validators=[Optional()])
+
+     # Dynamically set the choices for clinical_status, verification_status, severity, and category
+    #form.clinical_status.choices = [(status['code'], status['display']) for status in AllergyIntolerance.get_clinical_status_codes()]
+    #form.verification_status.choices = [(status['code'], status['display']) for status in AllergyIntolerance.get_verification_status_codes()]
+    #form.severity.choices = [(level['code'], level['display']) for level in AllergyIntolerance.get_severity_levels()]
+    #form.category.choices = [(category['code'], category['display']) for category in AllergyIntolerance.get_category_options()]
+
+
+
+class ImmunizationForm(FlaskForm):
+    visit_id = HiddenField('Visit ID', validators=[Optional()])
+    patient_id = HiddenField('Patient ID', validators=[DataRequired()])
+    vaccine_code = SelectField('Vaccine Code', choices=[], validators=[DataRequired()])  # Empty choices initially
+    status = SelectField('Status', choices=[], validators=[Optional()])  # Empty choices initially
+    date = DateField('Date', validators=[DataRequired()])
+    lot_number = StringField('Lot Number', validators=[Optional(), Length(max=50)])
+    site = SelectField('Site', choices=[], validators=[Optional()])  # Empty choices initially
+    route = SelectField('Route', choices=[], validators=[Optional()])  # Empty choices initially
+    dose_quantity = StringField('Dose Quantity', validators=[Optional(), Length(max=20)])  # Added dose quantity
+    manufacturer = StringField('Manufacturer', validators=[Optional(), Length(max=100)])
+    notes = TextAreaField('Notes', validators=[Optional()])
+
+    # Dynamically set the choices for the vaccine_code, status, site, and route fields
+    #form.vaccine_code.choices = [(vaccine['code'], vaccine['display']) for vaccine in Immunization.get_vaccine_codes()]
+    #form.status.choices = [(status['code'], status['display']) for status in Immunization.get_status_codes()]
+    #form.site.choices = [(site['code'], site['display']) for site in Immunization.get_site_options()]
+    #form.route.choices = [(route['code'], route['display']) for route in Immunization.get_route_options()]
+
+
 class MedicalHistoryForm(FlaskForm):
     visit_id = HiddenField('Visit ID', validators=[Optional()])
     patient_id = HiddenField('Patient ID', validators=[DataRequired()])
@@ -155,15 +194,6 @@ class MedicalHistoryForm(FlaskForm):
     resolution_date = DateField('Resolution Date', validators=[Optional()])
     notes = TextAreaField('Notes', validators=[Optional()])
 
-class ImmunizationForm(FlaskForm):
-    visit_id = HiddenField('Visit ID', validators=[Optional()])
-    patient_id = HiddenField('Patient ID', validators=[DataRequired()])
-    vaccine_code = StringField('Vaccine Code', validators=[DataRequired(), Length(max=100)])
-    status = SelectField('Status', choices=[('completed', 'Completed'), ('entered-in-error', 'Entered in Error'), ('not-done', 'Not Done')], validators=[Optional()])
-    date = DateField('Date', validators=[DataRequired()])
-    lot_number = StringField('Lot Number', validators=[Optional(), Length(max=50)])
-    site = StringField('Site', validators=[Optional(), Length(max=50)])
-    notes = TextAreaField('Notes', validators=[Optional()])
 
 class AppointmentForm(FlaskForm):
     visit_id = HiddenField('Visit ID', validators=[Optional()])

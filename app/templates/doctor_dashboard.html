@@ -4,7 +4,7 @@
 
 
 {% block content %}
-<div class="container my-4">
+<div class="container-fluid my-4">
     <div class="row row-cols-1 row-cols-md-3 g-4">
         <!-- Accounts Thumbnail -->
         <div class="col">
@@ -12,7 +12,7 @@
                 <div class="card shadow-sm h-100">
                     <div class="card-body text-center">
                         <div class="icon-card text-primary mb-2">
-                            <i class="bi bi-people" style="font-size: 48px;"></i>
+                            <i class="bi bi-people" style="font-size: 96px;"></i>
                         </div>
                         <p class="card-text">Accounts</p>
                     </div>
@@ -27,7 +27,7 @@
                 <div class="card shadow-sm h-100">
                     <div class="card-body text-center">
                         <div class="icon-card text-primary mb-2">
-                            <i class="bi bi-heart-pulse" style="font-size: 48px;"></i>
+                            <i class="bi bi-heart-pulse" style="font-size: 96px;"></i>
                         </div>
                         <p class="card-text">Patients</p>
                     </div>
@@ -40,7 +40,7 @@
                 <div class="card shadow-sm h-100">
                     <div class="card-body text-center">
                         <div class="icon-card text-primary mb-2">
-                            <i class="bi bi-calendar-check" style="font-size: 48px;"></i>
+                            <i class="bi bi-calendar-check" style="font-size: 96px;"></i>
                         </div>
                         <p class="card-text">Appointments</p>
                     </div>
@@ -53,7 +53,7 @@
                 <div class="card shadow-sm h-100">
                     <div class="card-body text-center">
                         <div class="icon-card text-primary mb-2">
-                            <i class="bi bi-clipboard-check" style="font-size: 48px;"></i>
+                            <i class="bi bi-clipboard-check" style="font-size: 96px;"></i>
                         </div>
                         <p class="card-text">Survey</p>
                     </div>
@@ -66,7 +66,7 @@
                 <div class="card shadow-sm h-100">
                     <div class="card-body text-center">
                         <div class="icon-card text-primary mb-2">
-                            <i class="bi bi-info-circle" style="font-size: 48px;"></i>
+                            <i class="bi bi-info-circle" style="font-size: 96px;"></i>
                         </div>
                         <p class="card-text">About</p>
                     </div>
@@ -75,11 +75,11 @@
         </div>
 
         <div class="col">
-            <a href="#" class="text-decoration-none">
+            <a href="{{ url_for('main.extra') }}" class="text-decoration-none">
                 <div class="card shadow-sm h-100">
                     <div class="card-body text-center">
                         <div class="icon-card text-primary mb-2">
-                            <i class="bi bi-stars" style="font-size: 48px;"></i>
+                            <i class="bi bi-stars" style="font-size: 96px;"></i>
                         </div>
                         <p class="card-text">Extra</p>
                     </div>

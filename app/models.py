@@ -117,13 +117,13 @@ class Patient(UserMixin, db.Model):
     # Relationships
     #cascade='all, delete-orphan' will delete all child information link to this patient
     doctor_relationships = relationship('DoctorPatient', back_populates='patient', cascade='all, delete-orphan', lazy='dynamic')
-    immunizations = relationship('Immunization', back_populates='patient', cascade='all, delete-orphan',  lazy='dynamic')
+    immunizations = relationship('Immunization', back_populates='patient', cascade='all, delete-orphan',  lazy='select')
     procedures = relationship('Procedure', back_populates='patient', cascade='all, delete-orphan', lazy='dynamic')
     vitals = relationship('Vitals', back_populates='patient',cascade='all, delete-orphan', lazy='dynamic')
     medical_history = relationship('MedicalHistory', back_populates='patient', cascade='all, delete-orphan', lazy='dynamic')
-    allergies = relationship('AllergyIntolerance', back_populates='patient', cascade='all, delete-orphan', lazy='dynamic')
-    observations = relationship('Observation', back_populates='patient', cascade='all, delete-orphan',  lazy='dynamic')
-    medications = relationship('MedicationStatement', back_populates='patient', cascade='all, delete-orphan', lazy='dynamic')
+    allergies = relationship('AllergyIntolerance', back_populates='patient', cascade='all, delete-orphan', lazy='select')
+    observations = relationship('Observation', back_populates='patient', cascade='all, delete-orphan',  lazy='select')
+    medications = relationship('MedicationStatement', back_populates='patient', cascade='all, delete-orphan', lazy='select')
     appointments = relationship('Appointment', back_populates='patient',cascade='all, delete-orphan',  lazy='select')
     visits = relationship('Visit', back_populates='patient')
 
@@ -294,37 +294,169 @@ class Observation(UserMixin,db.Model):
     patient = relationship('Patient', back_populates='observations')
     visit = relationship('Visit', back_populates='observations', foreign_keys=[visit_id])
 
-class AllergyIntolerance(UserMixin,db.Model):
+# Updated AllergyIntolerance Model
+class AllergyIntolerance(UserMixin, db.Model):
     __tablename__ = 'allergy_intolerance'
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     patient_id = db.Column(db.String(50), db.ForeignKey('patient_basic.id'), nullable=False)
     visit_id = db.Column(db.Integer, db.ForeignKey('visits.id'), nullable=False)
-    substance = db.Column(db.String(100), nullable=False)
+    substance = db.Column(db.String(100), nullable=False)  # This can be extended to reference a code system
     clinical_status = db.Column(db.String(20), nullable=True)
     verification_status = db.Column(db.String(20), nullable=True)
     severity = db.Column(db.String(20), nullable=True)
+    type = db.Column(db.String(20), nullable=True)
+    category = db.Column(db.String(50), nullable=True)
+    reaction = db.Column(db.Text, nullable=True)
+    onset = db.Column(db.Date, nullable=True)
 
     # Relationships
     patient = relationship('Patient', back_populates='allergies')
     visit = relationship('Visit', back_populates='allergies', foreign_keys=[visit_id])
 
-# Medication Model (FHIR: MedicationStatement)
-class MedicationStatement(UserMixin,db.Model):
+    @staticmethod
+    def get_clinical_status_codes():
+        return [
+            {"code": "active", "display": "Active"},
+            {"code": "inactive", "display": "Inactive"},
+            {"code": "resolved", "display": "Resolved"}
+        ]
+
+    @staticmethod
+    def get_verification_status_codes():
+        return [
+            {"code": "confirmed", "display": "Confirmed"},
+            {"code": "unconfirmed", "display": "Unconfirmed"},
+            {"code": "refuted", "display": "Refuted"}
+        ]
+
+    @staticmethod
+    def get_severity_levels():
+        return [
+            {"code": "mild", "display": "Mild"},
+            {"code": "moderate", "display": "Moderate"},
+            {"code": "severe", "display": "Severe"}
+        ]
+
+    @staticmethod
+    def get_category_options():
+        """Retrieve predefined category codes for the allergy (e.g., food, medication)."""
+        return [
+            {"code": "food", "display": "Food"},
+            {"code": "medication", "display": "Medication"},
+            {"code": "environmental", "display": "Environmental"}
+        ]
+
+
+# Updated MedicationStatement Model
+class MedicationStatement(UserMixin, db.Model):
     __tablename__ = 'medication_statement'
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     patient_id = db.Column(db.String(50), db.ForeignKey('patient_basic.id'), nullable=False)
     visit_id = db.Column(db.Integer, db.ForeignKey('visits.id'), nullable=False)
-    medication = db.Column(db.String(100), nullable=False)
-    dosage = db.Column(db.String(50), nullable=True)
+    medication_code = db.Column(db.String(100), nullable=False)  # Consider referencing a code system (e.g., RxNorm)
+    dosage_instruction = db.Column(db.Text, nullable=True)  # Detailed dosage instructions
     status = db.Column(db.String(20), nullable=True)
     effectivePeriod_start = db.Column(db.Date, nullable=True)
     effectivePeriod_end = db.Column(db.Date, nullable=True)
+    adherence = db.Column(db.String(20), nullable=True)
+    reason_code = db.Column(db.Text, nullable=True)
 
     # Relationships
     patient = relationship('Patient', back_populates='medications')
     visit = relationship('Visit', back_populates='medications', foreign_keys=[visit_id])
+
+    @staticmethod
+    def get_status_codes():
+        return [
+            {"code": "active", "display": "Active"},
+            {"code": "completed", "display": "Completed"},
+            {"code": "not-taken", "display": "Not Taken"}
+        ]
+
+    @staticmethod
+    def get_adherence_codes():
+        """Retrieve predefined adherence options (e.g., compliant, non-compliant)."""
+        return [
+            {"code": "compliant", "display": "Compliant"},
+            {"code": "non-compliant", "display": "Non-compliant"},
+            {"code": "unknown", "display": "Unknown"}
+        ]
+
+# Updated Immunization Model with more vaccines
+class Immunization(UserMixin, db.Model):
+    __tablename__ = 'immunization'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    patient_id = db.Column(db.String(50), db.ForeignKey('patient_basic.id'), nullable=False)
+    visit_id = db.Column(db.Integer, db.ForeignKey('visits.id'), nullable=False)
+    vaccine_code = db.Column(db.String(100), nullable=False)  # This can be extended to reference a code system (e.g., SNOMED)
+    status = db.Column(db.String(20), nullable=True)
+    date = db.Column(db.Date, nullable=False)
+    lot_number = db.Column(db.String(50), nullable=True)
+    site = db.Column(db.String(50), nullable=True)
+    route = db.Column(db.String(50), nullable=True)
+    dose_quantity = db.Column(db.String(20), nullable=True)
+    manufacturer = db.Column(db.String(100), nullable=True)  # Add manufacturer details
+    notes = db.Column(db.Text, nullable=True)
+
+    # Relationships
+    patient = relationship('Patient', back_populates='immunizations')
+    visit = relationship('Visit', back_populates='immunizations', foreign_keys=[visit_id])
+
+    @staticmethod
+    def get_status_codes():
+        return [
+            {"code": "completed", "display": "Completed"},
+            {"code": "entered-in-error", "display": "Entered in Error"},
+            {"code": "not-done", "display": "Not Done"}
+        ]
+
+    @staticmethod
+    def get_site_options():
+        return [
+            {"code": "left-arm", "display": "Left Arm"},
+            {"code": "right-arm", "display": "Right Arm"},
+            {"code": "left-thigh", "display": "Left Thigh"},
+            {"code": "right-thigh", "display": "Right Thigh"}
+        ]
+
+    @staticmethod
+    def get_route_options():
+        return [
+            {"code": "IM", "display": "Intramuscular"},
+            {"code": "SC", "display": "Subcutaneous"},
+            {"code": "ID", "display": "Intradermal"}
+        ]
+
+    @staticmethod
+    def get_vaccine_codes():
+        """Retrieve predefined vaccine codes or list."""
+        return [
+            {"code": "207", "display": "Influenza, Inactivated"},
+            {"code": "141", "display": "Measles, Mumps, Rubella (MMR)"},
+            {"code": "152", "display": "COVID-19"},
+            {"code": "151", "display": "Hepatitis A"},
+            {"code": "150", "display": "Hepatitis B"},
+            {"code": "33", "display": "Polio, Inactivated (IPV)"},
+            {"code": "21", "display": "Diphtheria, Tetanus, Pertussis (DTaP)"},
+            {"code": "74", "display": "Tetanus, Diphtheria (TD)"},
+            {"code": "136", "display": "Varicella (Chickenpox)"},
+            {"code": "126", "display": "Pneumococcal conjugate (PCV13)"},
+            {"code": "133", "display": "Pneumococcal polysaccharide (PPSV23)"},
+            {"code": "127", "display": "Haemophilus influenzae type b (Hib)"},
+            {"code": "88", "display": "Meningococcal conjugate (MCV4)"},
+            {"code": "49", "display": "Human Papillomavirus (HPV)"},
+            {"code": "132", "display": "Rotavirus"},
+            {"code": "172", "display": "Zoster (Shingles)"},
+            {"code": "97", "display": "Typhoid"},
+            {"code": "56", "display": "Yellow Fever"},
+            {"code": "67", "display": "Rabies"},
+            {"code": "104", "display": "Japanese Encephalitis"},
+            {"code": "80", "display": "Cholera"}
+        ]
+
 
     
 # Appointment Model (FHIR: Appointment)
@@ -345,24 +477,6 @@ class Appointment(UserMixin,db.Model):
     doctor = relationship('User', back_populates='appointments')
     visit = relationship('Visit', back_populates='appointments', foreign_keys=[visit_id])
 
-
-# Immunization Model (FHIR: Immunization)
-class Immunization(UserMixin,db.Model):
-    __tablename__ = 'immunization'
-
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    patient_id = db.Column(db.String(50), db.ForeignKey('patient_basic.id'), nullable=False)
-    visit_id = db.Column(db.Integer, db.ForeignKey('visits.id'), nullable=False)
-    vaccine_code = db.Column(db.String(100), nullable=False)
-    status = db.Column(db.String(20), nullable=True)
-    date = db.Column(db.Date, nullable=False)
-    lot_number = db.Column(db.String(50), nullable=True)
-    site = db.Column(db.String(50), nullable=True)
-    notes = db.Column(db.Text, nullable=True)
-
-    # Relationships
-    patient = relationship('Patient', back_populates='immunizations')
-    visit = relationship('Visit', back_populates='immunizations', foreign_keys=[visit_id])
 
 # Procedure Model (FHIR: Procedure)
 class Procedure(UserMixin,db.Model):

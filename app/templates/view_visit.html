@@ -10,9 +10,18 @@
             <a href="{{ url_for('main.edit_visit', visit_id=visit.id) }}" class="btn btn-primary btn-sm float-right">Edit Visit</a>
         </div>
         <div class="card-body">
-            <p><strong>Status:</strong> {{ visit.status }}</p>
-            <p><strong>Reason Code:</strong> {{ visit.reason_code }}  - {{ visit.reason_code_description }} </p>
-            <p><strong>Diagnosis Code:</strong> {{ visit.diagnosis_code }}</p>
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Status:</strong> {{ visit.status }}</p>
+                    <p><strong>Reason Code:</strong> {{ visit.reason_code }}  - {{ visit.reason_code_description }} </p>
+                    <p><strong>Diagnosis Code:</strong> {{ visit.diagnosis_code }}</p>
+                </div>
+                <div class="col-md-6 float-right">
+                    <p><strong>Class Code:</strong> {{ visit.class_code }}</p>
+                    <p><strong>Priority:</strong> {{ visit.priority}} </p>
+                    <p><strong>Location:</strong> {{ visit.location }}</p>
+                </div>
+            </div>         
             <p><strong>Notes:</strong> {{ visit.notes }}</p>
         </div>
     </div>
