@@ -155,3 +155,24 @@ html:not(.dark-style) .account-settings-links .list-group-item.active {
     font-size: 1.25rem;
     font-weight: 500;
   }
+
+  .table-hover tbody tr:hover {
+    background-color: #d4edda; /* Soft green */
+  }
+  
+/* Hover effect */
+.nav-tabs .nav-link:hover {
+    background-color: #495057; /* Darker gray background on hover */
+    color: #f8f9fa; /* Light text color on hover */
+}
+
+/* Active tab style */
+.nav-tabs .nav-link.active {
+    background-color: #343a40; /* Dark background for the active tab */
+    color: #f8f9fa; /* Light text for the active tab */
+}
+
+.table-dark-row {
+    background-color: #343a40; /* Dark gray background */
+    color: #f8f9fa; /* Light text color to make it readable */
+}

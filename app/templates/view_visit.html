@@ -2,12 +2,12 @@
 
 {% extends "base.html" %}
 {% block content %}
-<div class="container mt-5">
+<div class="mt-5 w-100">
     <h2>Visit Details</h2>
     <div class="card mb-3">
         <div class="card-header">
             Visit on {{ visit.visit_date.strftime('%Y-%m-%d') }}
-            <a href="{{ url_for('main.edit_visit', visit_id=visit.id) }}" class="btn btn-primary btn-sm float-right">Edit Visit</a>
+            <a href="{{ url_for('main.edit_visit', visit_id=visit.id) }}" class="btn btn-warning btn-sm float-right">Edit Visit</a>
         </div>
         <div class="card-body">
             <div class="row">
@@ -26,6 +26,24 @@
         </div>
     </div>
 
+    <br>
+    <!-- Dropdown with buttons to select observation type -->
+    <div class="dropdown">
+        <button class="btn btn-success dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            Add New Medical Records
+        </button>
+        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+            <button class="dropdown-item" type="button" data-toggle="modal" data-target="#immunizationModal">Add Immunization</button>
+            <button class="dropdown-item" type="button" data-toggle="modal" data-target="#medicationModal">Add Medication</button>
+            <button class="dropdown-item" type="button" data-toggle="modal" data-target="#vitalsModal">Add Vitals</button>
+            <button class="dropdown-item" type="button" data-toggle="modal" data-target="#allergyModal">Add Allergy</button>
+            <button class="dropdown-item" type="button" data-toggle="modal" data-target="#medicalHistoryModal">Add Medical History</button>
+            <button class="dropdown-item" type="button" data-toggle="modal" data-target="#appointmentModal">Add Appointment</button>
+            <button class="dropdown-item" type="button" data-toggle="modal" data-target="#procedureModal">Add Procedure</button>
+        </div>
+    </div>
+
+    <br>
     <h3>Observations</h3>
     
     {% for observation in visit.observations %}
@@ -41,27 +59,38 @@
     <p>No observations recorded.</p>
     {% endfor %}
     <hr>
-    <a href="{{ url_for('main.add_observation', visit_id=visit.id) }}" class="btn btn-primary mt-3">Add New Observation</a>
 
-    <!-- Similar sections for Procedures, Medications, Vitals, Immunizations, Allergies, Medical Histories -->
-
-    <!-- Dropdown with buttons to select observation type -->
-    <div class="dropdown">
-        <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-            Add Observation
-        </button>
-        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-            <button class="dropdown-item" type="button" data-toggle="modal" data-target="#immunizationModal">Add Immunization</button>
-            <button class="dropdown-item" type="button" data-toggle="modal" data-target="#medicationModal">Add Medication</button>
-            <button class="dropdown-item" type="button" data-toggle="modal" data-target="#vitalsModal">Add Vitals</button>
-            <button class="dropdown-item" type="button" data-toggle="modal" data-target="#allergyModal">Add Allergy</button>
-            <button class="dropdown-item" type="button" data-toggle="modal" data-target="#medicalHistoryModal">Add Medical History</button>
-            <button class="dropdown-item" type="button" data-toggle="modal" data-target="#appointmentModal">Add Appointment</button>
-            <button class="dropdown-item" type="button" data-toggle="modal" data-target="#procedureModal">Add Procedure</button>
-        </div>
+    <h3>Immunization</h3>    
+    <div class="table-responsive">
+        <table class="table table-bordered table-striped outline-table table-hover">
+            <thead>
+                <tr class="table-dark-row">
+                    <th>Vaccine Code</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                    <th>Lot Number</th>
+                    <th>Site</th>
+                    <th>Route</th>
+                    <th>Dose Quantity</th>
+                    <th>Manufacturer</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for immunization in visit.immunizations %}
+                <tr>
+                    <td>{{ immunization.vaccine_code }}</td>
+                    <td>{{ immunization.status }}</td>
+                    <td>{{ immunization.date }}</td>
+                    <td>{{ immunization.lot_number }}</td>
+                    <td>{{ immunization.site }}</td>
+                    <td>{{ immunization.route }}</td>
+                    <td>{{ immunization.dose_quantity }}</td>
+                    <td>{{ immunization.manufacturer }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
-
-
 
     <!-- Add Immunization Modal -->
     <div class="modal fade" id="immunizationModal" tabindex="-1" role="dialog" aria-labelledby="immunizationModalLabel" aria-hidden="true">
