@@ -44,5 +44,117 @@
     <a href="{{ url_for('main.add_observation', visit_id=visit.id) }}" class="btn btn-primary mt-3">Add New Observation</a>
 
     <!-- Similar sections for Procedures, Medications, Vitals, Immunizations, Allergies, Medical Histories -->
+
+    <!-- Dropdown with buttons to select observation type -->
+    <div class="dropdown">
+        <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            Add Observation
+        </button>
+        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+            <button class="dropdown-item" type="button" data-toggle="modal" data-target="#immunizationModal">Add Immunization</button>
+            <button class="dropdown-item" type="button" data-toggle="modal" data-target="#medicationModal">Add Medication</button>
+            <button class="dropdown-item" type="button" data-toggle="modal" data-target="#vitalsModal">Add Vitals</button>
+            <button class="dropdown-item" type="button" data-toggle="modal" data-target="#allergyModal">Add Allergy</button>
+            <button class="dropdown-item" type="button" data-toggle="modal" data-target="#medicalHistoryModal">Add Medical History</button>
+            <button class="dropdown-item" type="button" data-toggle="modal" data-target="#appointmentModal">Add Appointment</button>
+            <button class="dropdown-item" type="button" data-toggle="modal" data-target="#procedureModal">Add Procedure</button>
+        </div>
+    </div>
+
+
+
+    <!-- Add Immunization Modal -->
+    <div class="modal fade" id="immunizationModal" tabindex="-1" role="dialog" aria-labelledby="immunizationModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="POST" action="{{ url_for('main.add_immunization', visit_id=visit.id) }}">
+                    {{ immunizationform.hidden_tag() }}
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="addImmunizationModalLabel">Add Immunization</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <!-- Vaccine Code -->
+                        <div class="form-group mb-3">
+                            <label for="vaccine_code" class="form-label">Vaccine Code</label>
+                            <select class="form-control" id="vaccine_code" name="vaccine_code" required>
+                                {% for code, display in immunizationform.vaccine_code.choices %}
+                                <option value="{{ code }}">{{ display }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Status -->
+                        <div class="form-group mb-3">
+                            <label for="status" class="form-label">Status</label>
+                            <select class="form-control" id="status" name="status" required>
+                                {% for code, display in immunizationform.status.choices %}
+                                <option value="{{ code }}">{{ display }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Date -->
+                        <div class="form-group mb-3">
+                            <label for="date" class="form-label">Date Administered</label>
+                            <input type="date" class="form-control" id="date" name="date" required>
+                        </div>
+
+                        <!-- Lot Number -->
+                        <div class="form-group mb-3">
+                            <label for="lot_number" class="form-label">Lot Number</label>
+                            <input type="text" class="form-control" id="lot_number" name="lot_number">
+                        </div>
+
+                        <!-- Site -->
+                        <div class="form-group mb-3">
+                            <label for="site" class="form-label">Site</label>
+                            <select class="form-control" id="site" name="site">
+                                {% for code, display in immunizationform.site.choices %}
+                                <option value="{{ code }}">{{ display }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Route -->
+                        <div class="form-group mb-3">
+                            <label for="route" class="form-label">Route</label>
+                            <select class="form-control" id="route" name="route">
+                                {% for code, display in immunizationform.route.choices %}
+                                <option value="{{ code }}">{{ display }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Dose Quantity -->
+                        <div class="form-group mb-3">
+                            <label for="dose_quantity" class="form-label">Dose Quantity</label>
+                            <input type="text" class="form-control" id="dose_quantity" name="dose_quantity">
+                        </div>
+
+                        <!-- Manufacturer -->
+                        <div class="form-group mb-3">
+                            <label for="manufacturer" class="form-label">Manufacturer</label>
+                            <input type="text" class="form-control" id="manufacturer" name="manufacturer">
+                        </div>
+
+                        <!-- Notes -->
+                        <div class="form-group mb-3">
+                            <label for="notes" class="form-label">Notes</label>
+                            <textarea class="form-control" id="notes" name="notes"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Add Immunization</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+  
 </div>
 {% endblock %}
