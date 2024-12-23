@@ -118,9 +118,9 @@ class Patient(UserMixin, db.Model):
     #cascade='all, delete-orphan' will delete all child information link to this patient
     doctor_relationships = relationship('DoctorPatient', back_populates='patient', cascade='all, delete-orphan', lazy='dynamic')
     immunizations = relationship('Immunization', back_populates='patient', cascade='all, delete-orphan',  lazy='select')
-    procedures = relationship('Procedure', back_populates='patient', cascade='all, delete-orphan', lazy='dynamic')
-    vitals = relationship('Vitals', back_populates='patient',cascade='all, delete-orphan', lazy='dynamic')
-    medical_history = relationship('MedicalHistory', back_populates='patient', cascade='all, delete-orphan', lazy='dynamic')
+    procedures = relationship('Procedure', back_populates='patient', cascade='all, delete-orphan', lazy='select')
+    vitals = relationship('Vitals', back_populates='patient',cascade='all, delete-orphan', lazy='select')
+    medical_history = relationship('MedicalHistory', back_populates='patient', cascade='all, delete-orphan', lazy='select')
     allergies = relationship('AllergyIntolerance', back_populates='patient', cascade='all, delete-orphan', lazy='select')
     observations = relationship('Observation', back_populates='patient', cascade='all, delete-orphan',  lazy='select')
     medications = relationship('MedicationStatement', back_populates='patient', cascade='all, delete-orphan', lazy='select')
@@ -241,6 +241,12 @@ class Visit(UserMixin, db.Model):
             {"code": "182888003", "display": "Injury follow-up"}
         ]
 
+    @property
+    def reason_code_description(self):
+        """Compute the reason code description dynamically."""
+        reason_code_map = {item["code"]: item["display"] for item in Visit.get_reason_codes()}
+        return reason_code_map.get(self.reason_code, "Unknown Reason")
+    
     @staticmethod
     def get_status_codes():
         """Retrieve predefined status codes."""
@@ -279,20 +285,62 @@ class Visit(UserMixin, db.Model):
             {"code": "hospital_room_101", "display": "Hospital Room 101"}
         ]
 
-class Observation(UserMixin,db.Model):
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
+from sqlalchemy.orm import relationship
+from datetime import datetime
+
+class Observation(UserMixin, db.Model):
     __tablename__ = 'observation'
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     patient_id = db.Column(db.String(50), db.ForeignKey('patient_basic.id'), nullable=False)
     visit_id = db.Column(db.Integer, db.ForeignKey('visits.id'), nullable=False)
-    code = db.Column(db.String(100), nullable=False)
-    value = db.Column(db.String(50), nullable=True)
-    status = db.Column(db.String(20), nullable=True)
-    #effectiveDateTime = db.Column(db.Date, nullable=True)
+    code = db.Column(db.String(100), nullable=False)  # This is a LOINC or SNOMED code
+    value = db.Column(db.String(50), nullable=True)  # The value of the observation (e.g., 37.0, "Normal")
+    status = db.Column(db.String(20), nullable=True)  # Observation status (e.g., "final", "preliminary")
+    category = db.Column(db.String(50), nullable=True)  # Category for the observation (e.g., "vital-signs")
+    effectiveDateTime = db.Column(db.DateTime, nullable=True)  # Effective date/time
 
     # Relationships
     patient = relationship('Patient', back_populates='observations')
     visit = relationship('Visit', back_populates='observations', foreign_keys=[visit_id])
+
+    # Additional relationships for dynamic loading options
+    # If you want to create tables for status, category, and code options
+    # Example (assuming tables `ObservationStatus`, `ObservationCategory`, and `ObservationCode`)
+    # status_ref = db.Column(db.Integer, db.ForeignKey('observation_status.id'), nullable=True)
+    # category_ref = db.Column(db.Integer, db.ForeignKey('observation_category.id'), nullable=True)
+    # code_ref = db.Column(db.Integer, db.ForeignKey('observation_code.id'), nullable=True)
+
+    @staticmethod
+    def get_status_options():
+        """Returns a list of possible status options."""
+        return [
+            {"code": "registered", "display": "Registered"},
+            {"code": "preliminary", "display": "Preliminary"},
+            {"code": "final", "display": "Final"},
+            {"code": "amended", "display": "Amended"},
+            {"code": "cancelled", "display": "Cancelled"}
+        ]
+
+    @staticmethod
+    def get_category_options():
+        """Returns a list of possible category options."""
+        return [
+            {"code": "vital-signs", "display": "Vital Signs"},
+            {"code": "laboratory", "display": "Laboratory"},
+            {"code": "imaging", "display": "Imaging"}
+        ]
+
+    @staticmethod
+    def get_code_options():
+        """Returns a list of possible code options (e.g., LOINC or SNOMED codes)."""
+        return [
+            {"code": "8462-4", "display": "Body Temperature"},
+            {"code": "8532-7", "display": "Blood Pressure"},
+            {"code": "10004-0", "display": "Heart Rate"}
+        ]
+
 
 # Updated AllergyIntolerance Model
 class AllergyIntolerance(UserMixin, db.Model):
@@ -356,12 +404,21 @@ class MedicationStatement(UserMixin, db.Model):
     patient_id = db.Column(db.String(50), db.ForeignKey('patient_basic.id'), nullable=False)
     visit_id = db.Column(db.Integer, db.ForeignKey('visits.id'), nullable=False)
     medication_code = db.Column(db.String(100), nullable=False)  # Consider referencing a code system (e.g., RxNorm)
-    dosage_instruction = db.Column(db.Text, nullable=True)  # Detailed dosage instructions
-    status = db.Column(db.String(20), nullable=True)
+    medication_name = db.Column(db.String(300), nullable=False)  # Name or description of the medication
+    status = db.Column(db.String(20), nullable=False)  # e.g., "active", "completed"
     effectivePeriod_start = db.Column(db.Date, nullable=True)
     effectivePeriod_end = db.Column(db.Date, nullable=True)
-    adherence = db.Column(db.String(20), nullable=True)
-    reason_code = db.Column(db.Text, nullable=True)
+    date_asserted = db.Column(db.Date, nullable=True)  # When the statement was recorded
+    information_source = db.Column(db.String(255), nullable=True)  # Who reported the medication (e.g., doctor, patient)
+    adherence = db.Column(db.String(20), nullable=True)  # Compliant status
+    reason_code = db.Column(db.Text, nullable=True)  # Reason for medication (e.g., "Hypertension")
+    reason_reference = db.Column(db.String(100), nullable=True)  # Reference to related condition or observation
+    status_reason = db.Column(db.String(255), nullable=True)  # Reason for status change
+    dosage_instruction = db.Column(db.Text, nullable=True)  # Detailed dosage instructions
+    notes = db.Column(db.Text, nullable=True)
+    category = db.Column(db.String(64), nullable=True, default="outpatient")  # Class: outpatient, inpatient, virtual
+    route_of_administration = db.Column(db.String(100), nullable=True)  # Route (e.g., "oral", "IV")
+    timing = db.Column(db.String(100), nullable=True)  # Timing of dosage (e.g., "twice daily")
 
     # Relationships
     patient = relationship('Patient', back_populates='medications')
@@ -372,7 +429,10 @@ class MedicationStatement(UserMixin, db.Model):
         return [
             {"code": "active", "display": "Active"},
             {"code": "completed", "display": "Completed"},
-            {"code": "not-taken", "display": "Not Taken"}
+            {"code": "entered-in-error", "display": "Entered in Error"},
+            {"code": "intended", "display": "Intended"},
+            {"code": "stopped", "display": "Stopped"},
+            {"code": "on-hold", "display": "On Hold"}
         ]
 
     @staticmethod
@@ -382,6 +442,15 @@ class MedicationStatement(UserMixin, db.Model):
             {"code": "compliant", "display": "Compliant"},
             {"code": "non-compliant", "display": "Non-compliant"},
             {"code": "unknown", "display": "Unknown"}
+        ]
+
+    @staticmethod
+    def get_category_codes():
+        """Retrieve predefined categories (e.g., inpatient, outpatient)."""
+        return [
+            {"code": "outpatient", "display": "Outpatient"},
+            {"code": "inpatient", "display": "Inpatient"},
+            {"code": "virtual", "display": "Virtual"}
         ]
 
 # Updated Immunization Model with more vaccines
@@ -457,75 +526,195 @@ class Immunization(UserMixin, db.Model):
             {"code": "80", "display": "Cholera"}
         ]
 
-
+    @property
+    def vaccine_code_description(self):
+        """Compute the vaccine code description dynamically."""
+        vaccine_code_map = {item["code"]: item["display"] for item in Immunization.get_vaccine_codes()}
+        return vaccine_code_map.get(self.vaccine_code, "Unknown Reason")
     
-# Appointment Model (FHIR: Appointment)
-class Appointment(UserMixin,db.Model):
+class Appointment(UserMixin, db.Model):
     __tablename__ = 'appointment'
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     patient_id = db.Column(db.String(50), db.ForeignKey('patient_basic.id'), nullable=False)
-    visit_id = db.Column(db.Integer, db.ForeignKey('visits.id'), nullable=True)  # Set nullable=True if an appointment can exist without a visit
+    visit_id = db.Column(db.Integer, db.ForeignKey('visits.id'), nullable=True)
     doctor_id = db.Column(db.String(50), db.ForeignKey('users.id'), nullable=False)
+    status = db.Column(db.String(20), nullable=False)  # e.g., booked, cancelled, noshow
+    service_category = db.Column(db.String(100), nullable=True)  # e.g., General Practice, Cardiology
+    service_type = db.Column(db.String(100), nullable=True)  # e.g., Consultation, Immunization
+    specialty = db.Column(db.String(100), nullable=True)  # e.g., Pediatrics, Orthopedics
+    appointment_type = db.Column(db.String(50), nullable=True)  # e.g., routine, urgent
+    reason_code = db.Column(db.String(255), nullable=True)  # Reason for appointment
+    priority = db.Column(db.String(50), nullable=True)  # e.g., routine, urgent
     start = db.Column(db.DateTime, nullable=False)
     end = db.Column(db.DateTime, nullable=True)
-    status = db.Column(db.String(20), nullable=True)
-    reason = db.Column(db.String(255), nullable=True)
+    participant_actor = db.Column(db.String(50), nullable=True)  # Actor (e.g., patient, practitioner)
+    participant_status = db.Column(db.String(20), nullable=True)  # e.g., accepted, declined, tentative
 
     # Relationships
     patient = relationship('Patient', back_populates='appointments')
     doctor = relationship('User', back_populates='appointments')
     visit = relationship('Visit', back_populates='appointments', foreign_keys=[visit_id])
 
+    @staticmethod
+    def get_status_options():
+        return [
+            {"code": "proposed", "display": "Proposed"},
+            {"code": "pending", "display": "Pending"},
+            {"code": "booked", "display": "Booked"},
+            {"code": "arrived", "display": "Arrived"},
+            {"code": "fulfilled", "display": "Fulfilled"},
+            {"code": "cancelled", "display": "Cancelled"},
+            {"code": "noshow", "display": "No Show"},
+            {"code": "entered-in-error", "display": "Entered in Error"},
+            {"code": "checked-in", "display": "Checked In"},
+            {"code": "waitlist", "display": "Waitlist"}
+        ]
+    
+    @staticmethod
+    def get_appointment_types():
+        return [
+            {"code": "routine", "display": "Routine"},
+            {"code": "urgent", "display": "Urgent"}
+        ]
 
-# Procedure Model (FHIR: Procedure)
-class Procedure(UserMixin,db.Model):
+    @staticmethod
+    def get_priority_options():
+        return [
+            {"code": "routine", "display": "Routine"},
+            {"code": "urgent", "display": "Urgent"}
+        ]
+
+class MedicalHistory(UserMixin, db.Model):
+    __tablename__ = 'medical_history'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    patient_id = db.Column(db.String(50), db.ForeignKey('patient_basic.id'), nullable=False)
+    visit_id = db.Column(db.Integer, db.ForeignKey('visits.id'), nullable=False)
+    clinical_status = db.Column(db.String(50), nullable=True)  # e.g., active, resolved, remission
+    verification_status = db.Column(db.String(50), nullable=True)  # e.g., confirmed, provisional
+    category = db.Column(db.String(50), nullable=True)  # e.g., problem-list-item, encounter-diagnosis
+    code = db.Column(db.String(100), nullable=True)  # Condition code (e.g., SNOMED-CT or ICD-10)
+    onset_date = db.Column(db.Date, nullable=True)  # When the condition started
+    abatement_date = db.Column(db.Date, nullable=True)  # When the condition ended (if resolved)
+    notes = db.Column(db.Text, nullable=True)
+
+    # Relationships
+    patient = relationship('Patient', back_populates='medical_history')
+    visit = relationship('Visit', back_populates='medical_histories', foreign_keys=[visit_id])
+
+    @staticmethod
+    def get_clinical_status_options():
+        return [
+            {"code": "active", "display": "Active"},
+            {"code": "resolved", "display": "Resolved"},
+            {"code": "remission", "display": "Remission"}
+        ]
+    
+    @staticmethod
+    def get_verification_status_options():
+        return [
+            {"code": "confirmed", "display": "Confirmed"},
+            {"code": "provisional", "display": "Provisional"},
+            {"code": "differential", "display": "Differential"}
+        ]
+    
+    @staticmethod
+    def get_category_options():
+        return [
+            {"code": "problem-list-item", "display": "Problem List Item"},
+            {"code": "encounter-diagnosis", "display": "Encounter Diagnosis"}
+        ]
+
+
+class Procedure(UserMixin, db.Model):
     __tablename__ = 'procedure'
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     patient_id = db.Column(db.String(50), db.ForeignKey('patient_basic.id'), nullable=False)
     visit_id = db.Column(db.Integer, db.ForeignKey('visits.id'), nullable=False)
-    code = db.Column(db.String(100), nullable=False)
-    status = db.Column(db.String(20), nullable=True)
-    performed_date = db.Column(db.Date, nullable=True)
+    status = db.Column(db.String(20), nullable=True)  # e.g., completed, not-done, in-progress
+    category = db.Column(db.String(50), nullable=True)  # e.g., surgical, diagnostic
+    code = db.Column(db.String(100), nullable=True)  # Procedure code (e.g., SNOMED-CT or CPT)
+    performed_date = db.Column(db.Date, nullable=True)  # Date of the procedure
     performer_id = db.Column(db.String(50), db.ForeignKey('users.id'), nullable=True)
-    notes = db.Column(db.Text, nullable=True)
+    reason_code = db.Column(db.String(255), nullable=True)  # Reason for the procedure
+    outcome = db.Column(db.String(50), nullable=True)  # Outcome of the procedure (e.g., successful)
+    report = db.Column(db.Text, nullable=True)  # Reference to diagnostic report
 
     # Relationships
     patient = relationship('Patient', back_populates='procedures')
     performer = relationship('User', back_populates='procedures')
     visit = relationship('Visit', back_populates='procedures', foreign_keys=[visit_id])
 
-
-# Vitals Model (FHIR: Observation for Vitals)
-class Vitals(UserMixin,db.Model):
+    @staticmethod
+    def get_status_options():
+        return [
+            {"code": "preparation", "display": "Preparation"},
+            {"code": "in-progress", "display": "In Progress"},
+            {"code": "not-done", "display": "Not Done"},
+            {"code": "on-hold", "display": "On Hold"},
+            {"code": "stopped", "display": "Stopped"},
+            {"code": "completed", "display": "Completed"},
+            {"code": "entered-in-error", "display": "Entered in Error"},
+            {"code": "unknown", "display": "Unknown"}
+        ]
+    
+    @staticmethod
+    def get_category_options():
+        return [
+            {"code": "surgical", "display": "Surgical"},
+            {"code": "diagnostic", "display": "Diagnostic"}
+        ]
+    
+    @staticmethod
+    def get_outcome_options():
+        return [
+            {"code": "successful", "display": "Successful"},
+            {"code": "failed", "display": "Failed"},
+            {"code": "partial-success", "display": "Partial Success"}
+        ]
+class Vitals(UserMixin, db.Model):
     __tablename__ = 'vitals'
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     patient_id = db.Column(db.String(50), db.ForeignKey('patient_basic.id'), nullable=False)
     visit_id = db.Column(db.Integer, db.ForeignKey('visits.id'), nullable=False)
-    type = db.Column(db.String(50), nullable=False)
-    value = db.Column(db.String(50), nullable=False)
-    unit = db.Column(db.String(20), nullable=False)
-    date_recorded = db.Column(db.DateTime, nullable=False)
+    status = db.Column(db.String(20), nullable=True)  # e.g., registered, final, amended
+    category = db.Column(db.String(50), nullable=True)  # e.g., vital-signs
+    code = db.Column(db.String(50), nullable=True)  # Type of observation (e.g., body temperature, blood pressure)
+    effective_date = db.Column(db.DateTime, nullable=False)  # Date of observation
+    value = db.Column(db.String(50), nullable=True)  # Measured value (e.g., 120/80 for blood pressure)
+    unit = db.Column(db.String(20), nullable=True)  # Unit of measurement (e.g., mmHg, °C)
 
     # Relationships
     patient = relationship('Patient', back_populates='vitals')
     visit = relationship('Visit', back_populates='vitals', foreign_keys=[visit_id])
 
+    @staticmethod
+    def get_status_options():
+        return [
+            {"code": "registered", "display": "Registered"},
+            {"code": "preliminary", "display": "Preliminary"},
+            {"code": "final", "display": "Final"},
+            {"code": "amended", "display": "Amended"},
+            {"code": "corrected", "display": "Corrected"},
+            {"code": "cancelled", "display": "Cancelled"},
+            {"code": "entered-in-error", "display": "Entered in Error"}
+        ]
     
-# Medical History Model (Custom: History)
-class MedicalHistory(UserMixin,db.Model):
-    __tablename__ = 'medical_history'
+    @staticmethod
+    def get_category_options():
+        return [
+            {"code": "vital-signs", "display": "Vital Signs"}
+        ]
+    
+    @staticmethod
+    def get_unit_options():
+        return [
+            {"code": "bpm", "display": "Beats per Minute"},
+            {"code": "mmhg", "display": "Millimeters of Mercury"},
+            {"code": "celsius", "display": "Celsius (°C)"},
+            {"code": "farenheit", "display": "Fahrenheit (°F)"}
+        ]
 
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    patient_id = db.Column(db.String(50), db.ForeignKey('patient_basic.id'), nullable=False)
-    visit_id = db.Column(db.Integer, db.ForeignKey('visits.id'), nullable=False)
-    condition = db.Column(db.String(100), nullable=False)
-    onset_date = db.Column(db.Date, nullable=True)
-    resolution_date = db.Column(db.Date, nullable=True)
-    notes = db.Column(db.Text, nullable=True)
-
-    # Relationships
-    patient = relationship('Patient', back_populates='medical_history')
-    visit = relationship('Visit', back_populates='medical_histories', foreign_keys=[visit_id])

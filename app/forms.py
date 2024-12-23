@@ -3,7 +3,7 @@ from flask_wtf import FlaskForm
 from wtforms import StringField,FormField,FieldList,DateTimeField,TextAreaField, DateField, PasswordField, SelectField, TelField, SubmitField, HiddenField, EmailField, IntegerField, RadioField
 from wtforms.validators import DataRequired, Email, EqualTo, Length, Regexp, NumberRange, Optional
 from datetime import date
-
+from .models import MedicationStatement, Observation
 
 class RegisterForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired(), Length(min=4, max=20)])
@@ -99,17 +99,38 @@ class MedicationStatementForm(FlaskForm):
     visit_id = HiddenField('Visit ID', validators=[Optional()])
     patient_id = HiddenField('Patient ID', validators=[DataRequired()])
     medication_code = StringField('Medication Code', validators=[DataRequired(), Length(max=100)])
-    dosage_instruction = TextAreaField('Dosage Instruction', validators=[Optional()])
-    status = SelectField('Status', choices=[], validators=[Optional()])  # Empty choices
+    medication_name = StringField('Medication Name', validators=[DataRequired(), Length(max=255)])
+    status = SelectField('Status', choices=[], validators=[DataRequired()])  # Empty choices, will be populated dynamically
     effectivePeriod_start = DateField('Start Date', validators=[Optional()])
     effectivePeriod_end = DateField('End Date', validators=[Optional()])
-    adherence = SelectField('Adherence', choices=[], validators=[Optional()])  # Empty choices
+    date_asserted = DateField('Date Asserted', validators=[Optional()])  # Date the statement was made
+    information_source = StringField('Information Source', validators=[Optional(), Length(max=255)])  # Who reported
+    adherence = SelectField('Adherence', choices=[], validators=[Optional()])  # Empty choices, will be populated dynamically
     reason_code = TextAreaField('Reason Code', validators=[Optional()])
+    reason_reference = StringField('Reason Reference', validators=[Optional(), Length(max=100)])  # Reference to Condition/Observation
+    status_reason = StringField('Status Reason', validators=[Optional(), Length(max=255)])  # Reason for status change
+    dosage_instruction = TextAreaField('Dosage Instruction', validators=[Optional()])
+    notes = TextAreaField('Notes', validators=[Optional()])
+    category = SelectField('Category', choices=[], validators=[Optional()])  # Empty choices, will be populated dynamically
+    route_of_administration = StringField('Route of Administration', validators=[Optional(), Length(max=100)])  # e.g., "oral", "IV"
+    timing = StringField('Timing', validators=[Optional(), Length(max=100)])  # e.g., "twice daily"
 
-    # Dynamically set the choices for the status and adherence fields
-    #form.status.choices = [(status['code'], status['display']) for status in MedicationStatement.get_status_codes()]
-    #form.adherence.choices = [(adherence['code'], adherence['display']) for adherence in MedicationStatement.get_adherence_codes()]
+    # Dynamically set the choices for the fields in the form constructor
+    def __init__(self, *args, **kwargs):
+        super(MedicationStatementForm, self).__init__(*args, **kwargs)
+        
+        # Dynamically populate choices for status
+        self.status.choices = [(status['code'], status['display']) for status in MedicationStatement.get_status_codes()]
 
+        # Dynamically populate choices for adherence
+        self.adherence.choices = [(adherence['code'], adherence['display']) for adherence in MedicationStatement.get_adherence_codes()]
+
+        # Dynamically populate choices for category
+        self.category.choices = [
+            ('outpatient', 'Outpatient'),
+            ('inpatient', 'Inpatient'),
+            ('virtual', 'Virtual')
+        ]
 
 
 class VisitForm(FlaskForm):
@@ -120,13 +141,36 @@ class VisitForm(FlaskForm):
     medications = FieldList(FormField(MedicationStatementForm), min_entries=1, max_entries=10)
     notes = TextAreaField('Notes', validators=[Optional()])
 
+from flask_wtf import FlaskForm
+from wtforms import StringField, SelectField, DateTimeField, HiddenField, TextAreaField
+from wtforms.validators import DataRequired, Optional, Length
+from datetime import datetime
+
 class ObservationForm(FlaskForm):
-    visit_id = HiddenField('Visit ID', validators=[DataRequired()])
+    visit_id = HiddenField('Visit ID', validators=[Optional()])
     patient_id = HiddenField('Patient ID', validators=[DataRequired()])
-    code = StringField('Observation Code', validators=[DataRequired(), Length(max=100)])
-    value = StringField('Value', validators=[Optional(), Length(max=50)])
-    status = SelectField('Status', choices=[('registered', 'Registered'), ('preliminary', 'Preliminary'), ('final', 'Final')], validators=[Optional()])
-    #effectiveDateTime = DateField('Effective DateTime',format='%Y-%m-%d', validators=[Optional()])
+    code = StringField('Observation Code', validators=[DataRequired(), Length(max=100)])  # LOINC or SNOMED code
+    value = StringField('Observation Value', validators=[Optional(), Length(max=255)])  # Value of the observation
+    status = SelectField('Status', choices=[], validators=[DataRequired()])  # Empty choices, will be populated dynamically
+    category = SelectField('Category', choices=[], validators=[Optional()])  # Empty choices, will be populated dynamically
+    effectiveDateTime = DateTimeField('Effective Date/Time', validators=[Optional()], default=datetime.utcnow)  # Date/Time of observation
+
+    # Dynamically set the choices for the fields in the form constructor
+    def __init__(self, *args, **kwargs):
+        super(ObservationForm, self).__init__(*args, **kwargs)
+        
+        # Dynamically populate choices for status
+        self.status.choices = [(status['code'], status['display']) for status in Observation.get_status_options()]
+        # Dynamically populate choices for status
+    
+        
+        # Dynamically populate choices for category
+        # Dynamically populate choices for status
+        self.category.choices = [(status['code'], status['display']) for status in Observation.get_category_options()]
+        
+        # Dynamically populate choices for code
+        self.code.choices = [(status['code'], status['display']) for status in Observation.get_code_options()]
+
 
 
 

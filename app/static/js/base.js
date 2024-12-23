@@ -6,3 +6,8 @@ function updateTime() {
 
 setInterval(updateTime, 1000); // Update time every second
 updateTime(); // Initialize on page load
+
+ // Initialize the tooltips
+ $(document).ready(function() {
+    $('[data-toggle="tooltip"]').tooltip();  // Activate tooltips
+});

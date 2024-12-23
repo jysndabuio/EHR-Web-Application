@@ -171,7 +171,10 @@ def view_patient(patient_id):
         joinedload(Patient.appointments),
         joinedload(Patient.immunizations),
         joinedload(Patient.allergies),
-        joinedload(Patient.medications)
+        joinedload(Patient.medications),
+        joinedload(Patient.observations),
+        joinedload(Patient.vitals),
+        joinedload(Patient.procedures)
     ).filter_by(id=patient_id).first_or_404()
 
     doctor_patient = DoctorPatient.query.filter_by(doctor_id=current_user.id, patient_id=patient_id).first()
@@ -186,13 +189,24 @@ def view_patient(patient_id):
     )
     
     # Map reason codes to their descriptions
-    reason_code_map = {item["code"]: item["display"] for item in Visit.get_reason_codes()}
+    #reason_code_map = {item["code"]: item["display"] for item in Visit.get_reason_codes()}
     
     # Sort visits in descending order by visit_date and add reason descriptions
     sorted_visits = sorted(patient.visits, key=lambda visit: visit.visit_date, reverse=True)
+
+    """
     for visit in patient.visits:
         visit.reason_code_description = reason_code_map.get(visit.reason_code, "Unknown Reason")
 
+    """
+
+    # Initialize the immunization form with dynamic choices
+    immunizationform = ImmunizationForm(obj=patient.immunizations)
+    immunizationform.vaccine_code.choices = [(item["code"], item["display"]) for item in Immunization.get_vaccine_codes()]
+    immunizationform.status.choices = [(item["code"], item["display"]) for item in Immunization.get_status_codes()]
+    immunizationform.site.choices = [(item["code"], item["display"]) for item in Immunization.get_site_options()]
+    immunizationform.route.choices = [(item["code"], item["display"]) for item in Immunization.get_route_options()]
+    
 
     return render_template(
         'view_patient.html', 
@@ -202,6 +216,7 @@ def view_patient(patient_id):
         immunizations=patient.immunizations,
         allergies=patient.allergies,
         medications=patient.medications,
+        immunizationform=immunizationform,
         show_return_button=True, 
         return_url=request.referrer
     )
@@ -228,11 +243,14 @@ def view_visit(visit_id):
     if not doctor_patient:
         flash('You do not have permission to view this visit.', 'danger')
         return redirect(url_for('main.doctor_dashboard'))
-
+    """
     reason_code_map = {item["code"]: item["display"] for item in Visit.get_reason_codes()}
 
     # Add the description to the visit object dynamically
     visit.reason_code_description = reason_code_map.get(visit.reason_code, "Unknown Reason")
+
+    """
+    
 
     # Initialize the immunization form with dynamic choices
     immunizationform = ImmunizationForm()
@@ -241,9 +259,55 @@ def view_visit(visit_id):
     immunizationform.site.choices = [(item["code"], item["display"]) for item in Immunization.get_site_options()]
     immunizationform.route.choices = [(item["code"], item["display"]) for item in Immunization.get_route_options()]
 
+    medicationform=MedicationStatementForm()
+    observationform = ObservationForm()
+
     return render_template('view_visit.html', 
                            visit=visit,
                            immunizationform=immunizationform,
+                           medicationform=medicationform, 
+                           observationform=observationform,
+                           show_return_button=True, 
+                            return_url=request.referrer)
+
+@bp.route('/doctor/patient/add', methods=['GET', 'POST'])
+@login_required
+def add_patient():
+    if current_user.role != 'doctor':
+        flash('Access denied.')
+        return redirect(url_for('dashboard'))
+
+    patient_form = PatientForm()
+
+    if patient_form.validate_on_submit():
+        # Create a new Patient
+        new_patient = Patient(
+            firstname=patient_form.firstname.data,
+            lastname=patient_form.lastname.data,
+            age=patient_form.age.data,
+            birthdate=patient_form.birthdate.data,
+            gender=patient_form.gender.data,
+            ecd_name=patient_form.ecd_name.data,
+            ecd_contact_number=patient_form.ecd_contact_number.data,
+            contact_number=patient_form.contact_number.data,
+            home_address=patient_form.home_address.data,
+        )
+        db.session.add(new_patient)
+        db.session.commit()  # Commit to generate new_patient.id
+
+        # Create association in DoctorPatient
+        doctor_patient = DoctorPatient(
+            doctor_id=current_user.id,
+            patient_id=new_patient.id
+        )
+        db.session.add(doctor_patient)
+        db.session.commit()
+
+        flash('New patient added successfully!', 'success')
+        return redirect(url_for('main.doctor_patients'))
+
+    return render_template('add_patient.html', 
+                           patient_form=patient_form,
                            show_return_button=True, 
                             return_url=request.referrer)
 
@@ -286,6 +350,219 @@ def add_visit(patient_id):
                            patient=patient,
                            show_return_button=True, 
                             return_url=request.referrer)
+
+@bp.route('/patient/<int:visit_id>/add_immunization', methods=['POST', 'GET'])
+@login_required
+def add_immunization(visit_id):
+    if current_user.role != 'doctor':
+        flash('Access unauthorized.', 'danger')
+        return redirect(url_for('main.login'))
+
+    # Load the visit object
+    visit = Visit.query.get_or_404(visit_id)
+
+    # Ensure the doctor has access to this visit's patient
+    doctor_patient = DoctorPatient.query.filter_by(doctor_id=current_user.id, patient_id=visit.patient_id).first()
+    if not doctor_patient:
+        flash('You do not have permission to add immunizations for this patient.', 'danger')
+        return redirect(url_for('main.doctor_dashboard'))
+
+    if request.method == 'POST':
+        # Collect data from the form
+        vaccine_code = request.form.get('vaccine_code')
+        status = request.form.get('status')
+        date = request.form.get('date')
+        lot_number = request.form.get('lot_number')
+        site = request.form.get('site')
+        route = request.form.get('route')
+        dose_quantity = request.form.get('dose_quantity')
+        manufacturer = request.form.get('manufacturer')
+        notes = request.form.get('notes')
+        
+        # Create a new immunization instance
+        immunization = Immunization(
+            patient_id=visit.patient.id,
+            visit_id=visit.id,
+            vaccine_code=vaccine_code,
+            status=status,
+            date=date,
+            lot_number=lot_number,
+            site=site,
+            route=route,
+            dose_quantity=dose_quantity,
+            manufacturer=manufacturer,
+            notes=notes,
+        )
+
+        # Save to database
+        db.session.add(immunization)
+        db.session.commit()
+
+        flash('Immunization added successfully.', 'success')
+        return redirect(url_for('main.view_patient', patient_id=visit.patient_id))
+
+    # Pass the patient and form to the template
+    return render_template(
+        'add_immunization.html',
+        patient=visit_id,
+    )
+
+
+@bp.route('/patient/<int:visit_id>/add_medication', methods=['POST', 'GET'])
+@login_required
+def add_medication(visit_id):
+    if current_user.role != 'doctor':
+        flash('Access unauthorized.', 'danger')
+        return redirect(url_for('main.login'))
+    
+    # Load the visit object
+    visit = Visit.query.get_or_404(visit_id)
+    
+    # Ensure the doctor has access to this visit's patient
+    doctor_patient = DoctorPatient.query.filter_by(doctor_id=current_user.id, patient_id=visit.patient_id).first()
+    if not doctor_patient:
+        flash('You do not have permission to add immunizations for this patient.', 'danger')
+        return redirect(url_for('main.doctor_dashboard'))
+
+    if request.method == 'POST':
+        # Collect data from the form
+        medication_code = request.form.get('medication_code')  # Medication code (e.g., RxNorm)
+        medication_name = request.form.get('medication_name')  # Name or description of the medication
+        status = request.form.get('status')  # e.g., "active", "completed"
+        effectivePeriod_start = request.form.get('effectivePeriod_start')  # Start date of medication usage
+        effectivePeriod_end = request.form.get('effectivePeriod_end')  # End date of medication usage
+        date_asserted = request.form.get('date_asserted')  # Date when the statement was recorded
+        information_source = request.form.get('information_source')  # Who reported the medication usage
+        adherence = request.form.get('adherence')  # e.g., "compliant", "non-compliant"
+        reason_code = request.form.get('reason_code')  # Reason for medication (e.g., "Hypertension")
+        reason_reference = request.form.get('reason_reference')  # Reference to related condition or observation
+        status_reason = request.form.get('status_reason')  # Reason for status change (e.g., "adverse reaction")
+        dosage_instruction = request.form.get('dosage_instruction')  # Dosage instructions (e.g., "Take twice daily")
+        notes = request.form.get('notes')  # Additional notes
+        category = request.form.get('category', "outpatient")  # Default to "outpatient" if not provided
+        route_of_administration = request.form.get('route_of_administration')  # Route (e.g., "oral", "IV")
+        timing = request.form.get('timing')  # Timing of dosage (e.g., "twice daily")
+
+        # Create a new MedicationStatement instance
+        medication = MedicationStatement(
+            patient_id=visit.patient.id,
+            visit_id=visit.id,
+            medication_code=medication_code,
+            medication_name=medication_name,
+            status=status,
+            effectivePeriod_start=effectivePeriod_start,
+            effectivePeriod_end=effectivePeriod_end,
+            date_asserted=date_asserted,
+            information_source=information_source,
+            adherence=adherence,
+            reason_code=reason_code,
+            reason_reference=reason_reference,
+            status_reason=status_reason,
+            dosage_instruction=dosage_instruction,
+            notes=notes,
+            category=category,
+            route_of_administration=route_of_administration,
+            timing=timing,
+        )
+
+        # Save to database
+        db.session.add(medication)
+        db.session.commit()
+
+
+        flash('Immunization added successfully.', 'success')
+        return redirect(url_for('main.view_visit', patient_id=visit.id))
+
+    # Pass the patient and form to the template
+    return render_template(
+        'view_visit.html',
+        visit_id=visit.id,
+    )
+
+@bp.route('/doctor/patient/<string:patient_id>/add_allergy', methods=['GET', 'POST'])
+@login_required
+def add_allergy(patient_id):
+    if current_user.role != 'doctor':
+        flash('Access unauthorized.', 'danger')
+        return redirect(url_for('login'))
+    
+    # Check if the patient is associated with the doctor
+    patient = Patient.query.get_or_404(patient_id)
+    doctor_patient = DoctorPatient.query.filter_by(doctor_id=current_user.id, patient_id=patient_id).first()
+    if not doctor_patient:
+        flash('You do not have permission to view this patient.', 'danger')
+        return redirect(url_for('main.doctor_dashboard'))
+    
+    form = AllergyIntoleranceForm()  # Assuming you've created a form class for allergy
+    
+    if form.validate_on_submit():
+        allergy = AllergyIntoleranceForm(
+            patient_id=patient.id,
+            substance=form.substance.data,
+            clinical_status=form.clinical_status.data,
+            verification_status=form.verification_status.data,
+            severity=form.severity.data,
+            type=form.type.data,
+            category=form.category.data,
+            reaction=form.reaction.data,
+            onset=form.onset.data
+        )
+        db.session.add(allergy)
+        db.session.commit()
+        flash('Allergy added successfully.', 'success')
+        return redirect(url_for('main.view_patient', patient_id=patient.id))
+    
+    return render_template('add_allergy.html', form=form, patient=patient)
+
+@bp.route('/patient/<int:visit_id>/add_observation', methods=['POST', 'GET'])
+@login_required
+def add_observation(visit_id):
+    if current_user.role != 'doctor':
+        flash('Access unauthorized.', 'danger')
+        return redirect(url_for('main.login'))
+    
+    # Load the visit object
+    visit = Visit.query.get_or_404(visit_id)
+    
+    # Ensure the doctor has access to this visit's patient
+    doctor_patient = DoctorPatient.query.filter_by(doctor_id=current_user.id, patient_id=visit.patient_id).first()
+    if not doctor_patient:
+        flash('You do not have permission to add observations for this patient.', 'danger')
+        return redirect(url_for('main.doctor_dashboard'))
+
+    if request.method == 'POST':
+        # Collect data from the form
+        code = request.form.get('code')  # Observation code (e.g., LOINC, SNOMED)
+        value = request.form.get('value')  # Value of the observation (e.g., "98.6", "Normal")
+        status = request.form.get('status')  # Status of the observation (e.g., "final")
+        category = request.form.get('category', "vital-signs")  # Default to "vital-signs"
+        effectiveDateTime = request.form.get('effectiveDateTime')  # Date/Time the observation was recorded
+
+        # Create a new Observation instance
+        observation = Observation(
+            patient_id=visit.patient.id,
+            visit_id=visit.id,
+            code=code,
+            value=value,
+            status=status,
+            category=category,
+            effectiveDateTime=effectiveDateTime,
+        )
+
+        # Save to database
+        db.session.add(observation)
+        db.session.commit()
+
+        flash('Observation added successfully.', 'success')
+        return redirect(url_for('main.view_visit', visit_id=visit.id))
+
+    # Pass the visit object and the form to the template
+    return render_template(
+        'view_visit.html',
+        visit_id=visit.id,
+        patient_id=visit.patient.id
+    )
+
 
 
 @bp.route('/visit/<int:visit_id>/delete', methods=['POST'])
@@ -351,88 +628,6 @@ def delete_patient(patient_id):
     flash('Patient deleted successfully.', 'success')
     return redirect(url_for('main.doctor_dashboard'))
 
-
-@bp.route('/visit/<int:visit_id>/add_observation', methods=['GET', 'POST'])
-@login_required
-def add_observation(visit_id):
-    if current_user.role != 'doctor':
-        flash('Access unauthorized.', 'danger')
-        return redirect(url_for('main.login'))
-
-    visit = Visit.query.get_or_404(visit_id)
-
-    # Ensure the doctor is associated with the patient
-    doctor_patient = DoctorPatient.query.filter_by(doctor_id=current_user.id, patient_id=visit.patient_id).first()
-    if not doctor_patient:
-        flash('You do not have permission to add observations for this visit.', 'danger')
-        return redirect(url_for('main.view_visit', visit_id=visit_id))
-
-    # Initialize the form and prepopulate hidden fields
-    observation_form = ObservationForm()
-    observation_form.visit_id.data = visit.id  # Populate visit_id
-    observation_form.patient_id.data = visit.patient_id  # Populate patient_id
-
-    if observation_form.validate_on_submit():
-        try:
-            # Debugging - Print form data
-            print(f"Form Data: {observation_form.data}")
-
-            new_observation = Observation(
-                patient_id=visit.patient_id,
-                visit_id=visit.id,
-                code=observation_form.code.data,
-                value=observation_form.value.data,
-                status=observation_form.status.data,
-            )
-            db.session.add(new_observation)
-            db.session.commit()
-
-            flash('Observation added successfully!', 'success')
-            return redirect(url_for('main.view_visit', visit_id=visit_id))
-        except Exception as e:
-            db.session.rollback()
-            flash(f"An error occurred: {str(e)}", "danger")
-
-    # Debugging - Print validation errors
-    if observation_form.errors:
-        print(f"Form Errors: {observation_form.errors}")
-
-    return render_template('add_observation.html', 
-                           observation_form=observation_form, 
-                           visit=visit,
-                           return_url=request.referrer)
-
-
-
-@bp.route('/observation/<int:observation_id>/edit', methods=['GET', 'POST'])
-@login_required
-def edit_observation(observation_id):
-    if current_user.role != 'doctor':
-        flash('Access unauthorized.', 'danger')
-        return redirect(url_for('main.login'))
-
-    observation = Observation.query.filter_by(id=observation_id).first_or_404()
-    visit = observation.visit
-    doctor_patient = DoctorPatient.query.filter_by(doctor_id=current_user.id, patient_id=visit.patient_id).first()
-    if not doctor_patient:
-        flash('You do not have permission to edit this observation.', 'danger')
-        return redirect(url_for('main.doctor_dashboard'))
-
-    form = ObservationForm(obj=observation)
-    if form.validate_on_submit():
-        observation.code = form.code.data
-        observation.value = form.value.data
-        observation.status = form.status.data
-        observation.effectiveDateTime = form.effectiveDateTime.data
-
-        db.session.commit()
-        flash('Observation updated successfully.', 'success')
-        return redirect(url_for('main.view_visit', visit_id=visit.id))
-    return render_template('edit_observation.html', 
-                           form=form, 
-                           observation=observation,
-                           show_return_button=True, 
-                            return_url=request.referrer)
 
 """
 @bp.route('/patient/<string:patient_id>/edit', methods=['GET', 'POST'])
@@ -548,175 +743,50 @@ def edit_visit(visit_id):
                            show_return_button=True, 
                             return_url=request.referrer)
 
-
-
-@bp.route('/doctor/patient/add', methods=['GET', 'POST'])
+@bp.route('/doctor/patient/<string:patient_id>/edit_observation/<int:observation_id>', methods=['GET', 'POST'])
 @login_required
-def add_patient():
-    if current_user.role != 'doctor':
-        flash('Access denied.')
-        return redirect(url_for('dashboard'))
-
-    patient_form = PatientForm()
-
-    if patient_form.validate_on_submit():
-        # Create a new Patient
-        new_patient = Patient(
-            firstname=patient_form.firstname.data,
-            lastname=patient_form.lastname.data,
-            age=patient_form.age.data,
-            birthdate=patient_form.birthdate.data,
-            gender=patient_form.gender.data,
-            ecd_name=patient_form.ecd_name.data,
-            ecd_contact_number=patient_form.ecd_contact_number.data,
-            contact_number=patient_form.contact_number.data,
-            home_address=patient_form.home_address.data,
-        )
-        db.session.add(new_patient)
-        db.session.commit()  # Commit to generate new_patient.id
-
-        # Create association in DoctorPatient
-        doctor_patient = DoctorPatient(
-            doctor_id=current_user.id,
-            patient_id=new_patient.id
-        )
-        db.session.add(doctor_patient)
-        db.session.commit()
-
-        flash('New patient added successfully!', 'success')
-        return redirect(url_for('main.doctor_patients'))
-
-    return render_template('add_patient.html', 
-                           patient_form=patient_form,
-                           show_return_button=True, 
-                            return_url=request.referrer)
-
-@bp.route('/patient/<int:visit_id>/add_immunization', methods=['POST', 'GET'])
-@login_required
-def add_immunization(visit_id):
+def edit_observation(patient_id, observation_id):
     if current_user.role != 'doctor':
         flash('Access unauthorized.', 'danger')
-        return redirect(url_for('main.login'))
-
-    # Load the visit object
-    visit = Visit.query.get_or_404(visit_id)
-
-    # Ensure the doctor has access to this visit's patient
-    doctor_patient = DoctorPatient.query.filter_by(doctor_id=current_user.id, patient_id=visit.patient_id).first()
+        return redirect(url_for('login'))
+    
+    # Check if the patient is associated with the doctor
+    patient = Patient.query.get_or_404(patient_id)
+    doctor_patient = DoctorPatient.query.filter_by(doctor_id=current_user.id, patient_id=patient_id).first()
     if not doctor_patient:
-        flash('You do not have permission to add immunizations for this patient.', 'danger')
+        flash('You do not have permission to view this patient.', 'danger')
         return redirect(url_for('main.doctor_dashboard'))
+    
+    # Get the observation to be edited
+    observation = Observation.query.get_or_404(observation_id)
 
+    # Initialize the ObservationForm with the existing observation data
+    observation_form = ObservationForm(obj=observation)
+    
     if request.method == 'POST':
         # Collect data from the form
-        vaccine_code = request.form.get('vaccine_code')
+        code = request.form.get('code')
+        value = request.form.get('value')
         status = request.form.get('status')
-        date = request.form.get('date')
-        lot_number = request.form.get('lot_number')
-        site = request.form.get('site')
-        route = request.form.get('route')
-        dose_quantity = request.form.get('dose_quantity')
-        manufacturer = request.form.get('manufacturer')
-        notes = request.form.get('notes')
-        
-        # Create a new immunization instance
-        immunization = Immunization(
-            patient_id=visit.patient.id,
-            visit_id=visit.id,
-            vaccine_code=vaccine_code,
-            status=status,
-            date=date,
-            lot_number=lot_number,
-            site=site,
-            route=route,
-            dose_quantity=dose_quantity,
-            manufacturer=manufacturer,
-            notes=notes,
-        )
+        category = request.form.get('category', "vital-signs")  # Default to "vital-signs"
+        effectiveDateTime = request.form.get('effectiveDateTime')
 
-        # Save to database
-        db.session.add(immunization)
+        # Update the observation with new data
+        observation.code = code
+        observation.value = value
+        observation.status = status
+        observation.category = category
+        observation.effectiveDateTime = effectiveDateTime
+        
+        # Commit the changes to the database
         db.session.commit()
 
-        flash('Immunization added successfully.', 'success')
-        return redirect(url_for('main.view_patient', patient_id=visit.patient_id))
-
-    # Pass the patient and form to the template
-    return render_template(
-        'add_immunization.html',
-        patient=visit_id,
-    )
-
-
-@bp.route('/doctor/patient/<string:patient_id>/edit_immunization/<int:immunization_id>', methods=['GET', 'POST'])
-@login_required
-def edit_immunization(patient_id, immunization_id):
-    if current_user.role != 'doctor':
-        flash('Access unauthorized.', 'danger')
-        return redirect(url_for('login'))
-    
-    # Check if the patient is associated with the doctor
-    patient = Patient.query.get_or_404(patient_id)
-    doctor_patient = DoctorPatient.query.filter_by(doctor_id=current_user.id, patient_id=patient_id).first()
-    if not doctor_patient:
-        flash('You do not have permission to view this patient.', 'danger')
-        return redirect(url_for('main.doctor_dashboard'))
-    
-    immunization = Immunization.query.get_or_404(immunization_id)
-    
-    form = ImmunizationForm(obj=immunization)  # Pre-populate form with existing immunization data
-    
-    if form.validate_on_submit():
-        immunization.vaccine_code = form.vaccine_code.data
-        immunization.status = form.status.data
-        immunization.date = form.date.data
-        immunization.lot_number = form.lot_number.data
-        immunization.site = form.site.data
-        immunization.route = form.route.data
-        immunization.dose_quantity = form.dose_quantity.data
-        immunization.manufacturer = form.manufacturer.data
-        immunization.notes = form.notes.data
-        
-        db.session.commit()
-        flash('Immunization updated successfully.', 'success')
+        flash('Observation updated successfully.', 'success')
         return redirect(url_for('main.view_patient', patient_id=patient.id))
     
-    return render_template('edit_immunization.html', form=form, patient=patient, immunization=immunization)
+    # Render the form with existing observation data
+    return render_template('edit_observation.html', observation_form=observation_form, patient=patient, observation=observation)
 
-@bp.route('/doctor/patient/<string:patient_id>/add_allergy', methods=['GET', 'POST'])
-@login_required
-def add_allergy(patient_id):
-    if current_user.role != 'doctor':
-        flash('Access unauthorized.', 'danger')
-        return redirect(url_for('login'))
-    
-    # Check if the patient is associated with the doctor
-    patient = Patient.query.get_or_404(patient_id)
-    doctor_patient = DoctorPatient.query.filter_by(doctor_id=current_user.id, patient_id=patient_id).first()
-    if not doctor_patient:
-        flash('You do not have permission to view this patient.', 'danger')
-        return redirect(url_for('main.doctor_dashboard'))
-    
-    form = AllergyIntoleranceForm()  # Assuming you've created a form class for allergy
-    
-    if form.validate_on_submit():
-        allergy = AllergyIntoleranceForm(
-            patient_id=patient.id,
-            substance=form.substance.data,
-            clinical_status=form.clinical_status.data,
-            verification_status=form.verification_status.data,
-            severity=form.severity.data,
-            type=form.type.data,
-            category=form.category.data,
-            reaction=form.reaction.data,
-            onset=form.onset.data
-        )
-        db.session.add(allergy)
-        db.session.commit()
-        flash('Allergy added successfully.', 'success')
-        return redirect(url_for('main.view_patient', patient_id=patient.id))
-    
-    return render_template('add_allergy.html', form=form, patient=patient)
 
 
 @bp.route('/doctor/patient/<string:patient_id>/edit_allergy/<int:allergy_id>', methods=['GET', 'POST'])
@@ -753,9 +823,10 @@ def edit_allergy(patient_id, allergy_id):
     
     return render_template('edit_allergy.html', form=form, patient=patient, allergy=allergy)
 
-@bp.route('/doctor/patient/<string:patient_id>/add_medication', methods=['GET', 'POST'])
+'''
+@bp.route('/doctor/patient/<string:patient_id>/add_medications', methods=['GET', 'POST'])
 @login_required
-def add_medication(patient_id):
+def add_medications(patient_id):
     if current_user.role != 'doctor':
         flash('Access unauthorized.', 'danger')
         return redirect(url_for('login'))
@@ -786,6 +857,7 @@ def add_medication(patient_id):
         return redirect(url_for('main.view_patient', patient_id=patient.id))
     
     return render_template('add_medication.html', form=form, patient=patient)
+'''
 
 @bp.route('/doctor/patient/<string:patient_id>/edit_medication/<int:medication_id>', methods=['GET', 'POST'])
 @login_required
@@ -820,21 +892,172 @@ def edit_medication(patient_id, medication_id):
     
     return render_template('edit_medication.html', form=form, patient=patient, medication=medication)
 
+@bp.route('/doctor/patient/<string:patient_id>/edit_immuinization/<int:immunization_id>', methods=['GET', 'POST'])
+@login_required
+def edit_immunization(patient_id, immunization_id):
+    if current_user.role != 'doctor':
+        flash('Access unauthorized.', 'danger')
+        return redirect(url_for('login'))
+    
+    # Check if the patient is associated with the doctor
+    patient = Patient.query.get_or_404(patient_id)
+    doctor_patient = DoctorPatient.query.filter_by(doctor_id=current_user.id, patient_id=patient_id).first()
+    if not doctor_patient:
+        flash('You do not have permission to view this patient.', 'danger')
+        return redirect(url_for('main.doctor_dashboard'))
+    
+    immunization = Immunization.query.get_or_404(immunization_id)
+
+    
+    immunizationform = MedicationStatementForm(obj=immunization)  # Pre-populate form with existing medication data
+    
+    if request.method == 'POST':
+        # Collect data from the form
+        vaccine_code = request.form.get('vaccine_code')
+        status = request.form.get('status')
+        date = request.form.get('date')
+        lot_number = request.form.get('lot_number')
+        site = request.form.get('site')
+        route = request.form.get('route')
+        dose_quantity = request.form.get('dose_quantity')
+        manufacturer = request.form.get('manufacturer')
+        notes = request.form.get('notes')
+        
+        # Create a new immunization instance
+        immunization = Immunization(
+            vaccine_code=vaccine_code,
+            status=status,
+            date=date,
+            lot_number=lot_number,
+            site=site,
+            route=route,
+            dose_quantity=dose_quantity,
+            manufacturer=manufacturer,
+            notes=notes,
+        )
+
+        
+        db.session.commit()
+        flash('Immunization updated successfully.', 'success')
+        return redirect(url_for('main.view_patient', patient_id=patient.id))
+    
+    return render_template('edit_immunization.html', immunizationformform=immunizationform, patient=patient, immunization=immunization)
+
 @bp.route('/immunization/<int:immunization_id>/delete', methods=['POST'])
 @login_required
 def delete_immunization(immunization_id):
-    # Ensure the user has permission to delete the immunization
+    # Fetch the immunization record or return a 404 if not found
     immunization = Immunization.query.get_or_404(immunization_id)
-    
-    # Add any permission checks here (e.g., make sure the doctor is associated with the patient)
-    
-    # Delete the immunization from the database
+    visit = immunization.visit  # Assuming the `visit` relationship is set up correctly
+
+    # Ensure the user has the appropriate permissions
+    if not current_user.role == 'doctor':
+        flash('Access unauthorized.', 'danger')
+        return redirect(url_for('main.doctor_dashboard'))
+
+    # Delete the immunization record
     db.session.delete(immunization)
     db.session.commit()
 
-    flash('Immunization deleted successfully.', 'success')
+    # Check if the associated visit contains any other medical records
+    if (
+        not visit.immunizations  # No immunizations left
+        and not visit.vitals  # No vitals left
+        and not visit.observations  # No observations left
+        and not visit.procedures  # No procedures left
+        and not visit.medications  # No medications left
+        and not visit.allergies  # No allergies left
+        and not visit.medical_histories  # No medical histories left
+        and not visit.appointments  # No appointments left
+    ):
+        # If no related records are left, delete the visit
+        db.session.delete(visit)
+        db.session.commit()
+
+        flash('Immunization and associated visit deleted successfully.', 'success')
+    else:
+        flash('Immunization deleted successfully.', 'success')
+
+    # Redirect back to the patient's details page
     return redirect(url_for('main.view_patient', patient_id=immunization.patient_id))
 
+@bp.route('/medication/<int:medication_id>/delete', methods=['POST'])
+@login_required
+def delete_medication(medication_id):
+    # Fetch the immunization record or return a 404 if not found
+    medication = MedicationStatement.query.get_or_404(medication_id)
+
+    visit = medication.visit  # Assuming the `visit` relationship is set up correctly
+
+    # Ensure the user has the appropriate permissions
+    if not current_user.role == 'doctor':
+        flash('Access unauthorized.', 'danger')
+        return redirect(url_for('main.doctor_dashboard'))
+
+    # Delete the immunization record
+    db.session.delete(medication)
+    db.session.commit()
+
+    # Check if the associated visit contains any other medical records
+    if (
+        not visit.immunizations  # No immunizations left
+        and not visit.vitals  # No vitals left
+        and not visit.observations  # No observations left
+        and not visit.procedures  # No procedures left
+        and not visit.immunizations  # No medications left
+        and not visit.allergies  # No allergies left
+        and not visit.medical_histories  # No medical histories left
+        and not visit.appointments  # No appointments left
+    ):
+        # If no related records are left, delete the visit
+        db.session.delete(visit)
+        db.session.commit()
+
+        flash('Immunization and associated visit deleted successfully.', 'success')
+    else:
+        flash('Immunization deleted successfully.', 'success')
+
+    # Redirect back to the patient's details page
+    return redirect(url_for('main.view_patient', patient_id=medication.patient_id))
+
+@bp.route('/observation/<int:observation_id>/delete', methods=['POST'])
+@login_required
+def delete_observation(observation_id):
+    # Fetch the immunization record or return a 404 if not found
+    observation = Observation.query.get_or_404(observation_id)
+
+    visit = observation.visit  # Assuming the `visit` relationship is set up correctly
+
+    # Ensure the user has the appropriate permissions
+    if not current_user.role == 'doctor':
+        flash('Access unauthorized.', 'danger')
+        return redirect(url_for('main.doctor_dashboard'))
+
+    # Delete the immunization record
+    db.session.delete(observation)
+    db.session.commit()
+
+    # Check if the associated visit contains any other medical records
+    if (
+        not visit.immunizations  # No immunizations left
+        and not visit.vitals  # No vitals left
+        and not visit.medications  # No observations left
+        and not visit.procedures  # No procedures left
+        and not visit.immunizations  # No medications left
+        and not visit.allergies  # No allergies left
+        and not visit.medical_histories  # No medical histories left
+        and not visit.appointments  # No appointments left
+    ):
+        # If no related records are left, delete the visit
+        db.session.delete(visit)
+        db.session.commit()
+
+        flash('Immunization and associated visit deleted successfully.', 'success')
+    else:
+        flash('Immunization deleted successfully.', 'success')
+
+    # Redirect back to the patient's details page
+    return redirect(url_for('main.view_patient', patient_id=observation.patient_id))
 
 @bp.route('/account', methods=['GET', 'POST'])
 @login_required

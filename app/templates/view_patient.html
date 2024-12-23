@@ -55,46 +55,53 @@
                                 </div>
                                 <div class="modal-body">
                                     <!-- Edit fields for patient info -->
-                                    <div class="form-group">
-                                        <label for="patient_id">Patient ID</label>
-                                        <input type="text" class="form-control" id="patient_id" name="patient_id" value="{{ patient.patient_id }}" readonly>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="firstname">First Name</label>
-                                        <input type="text" class="form-control" id="firstname" name="firstname" value="{{ patient.firstname }}" readonly>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="lastname">Last Name</label>
-                                        <input type="text" class="form-control" id="lastname" name="lastname" value="{{ patient.lastname }}" required>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="age">Age</label>
-                                        <input type="number" class="form-control" id="age" name="age" value="{{ patient.age }}" required>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="gender">Gender</label>
-                                        <select class="form-control" id="gender" name="gender" required>
-                                            <option value="Male" {% if patient.gender == 'Male' %}selected{% endif %}>Male</option>
-                                            <option value="Female" {% if patient.gender == 'Female' %}selected{% endif %}>Female</option>
-                                            <option value="Other" {% if patient.gender == 'Other' %}selected{% endif %}>Other</option>
-                                        </select>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="contact_number">Contact Number</label>
-                                        <input type="text" class="form-control" id="contact_number" name="contact_number" value="{{ patient.contact_number }}" required>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="home_address">Home Address</label>
-                                        <textarea class="form-control" id="home_address" name="home_address" required>{{ patient.home_address }}</textarea>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="ecd_name">Emergency Contact Name</label>
-                                        <input type="text" class="form-control" id="ecd_name" name="ecd_name" value="{{ patient.ecd_name }}" required>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="ecd_contact_number">Emergency Contact Number</label>
-                                        <input type="text" class="form-control" id="ecd_contact_number" name="ecd_contact_number" value="{{ patient.ecd_contact_number }}" required>
-                                    </div>
+                                     <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label for="patient_id">Patient ID</label>
+                                                <input type="text" class="form-control" id="patient_id" name="patient_id" value="{{ patient.patient_id }}" readonly>
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="firstname">First Name</label>
+                                                <input type="text" class="form-control" id="firstname" name="firstname" value="{{ patient.firstname }}" readonly>
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="lastname">Last Name</label>
+                                                <input type="text" class="form-control" id="lastname" name="lastname" value="{{ patient.lastname }}" required>
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="age">Age</label>
+                                                <input type="number" class="form-control" id="age" name="age" value="{{ patient.age }}" required>
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="gender">Gender</label>
+                                                <select class="form-control" id="gender" name="gender" required>
+                                                    <option value="Male" {% if patient.gender == "Male" %}selected{% endif %}>Male</option>
+                                                    <option value="Female" {% if patient.gender == "Female" %}selected{% endif %}>Female</option>
+                                                    <option value="Other" {% if patient.gender == "Other" %}selected{% endif %}>Other</option>
+                                                </select>
+                                            </div>
+                                            
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label for="ecd_name">Emergency Contact Name</label>
+                                                <input type="text" class="form-control" id="ecd_name" name="ecd_name" value="{{ patient.ecd_name }}" required>
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="ecd_contact_number">Emergency Contact Number</label>
+                                                <input type="text" class="form-control" id="ecd_contact_number" name="ecd_contact_number" value="{{ patient.ecd_contact_number }}" required>
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="contact_number">Contact Number</label>
+                                                <input type="text" class="form-control" id="contact_number" name="contact_number" value="{{ patient.contact_number }}" required>
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="home_address">Home Address</label>
+                                                <textarea class="form-control" id="home_address" name="home_address" required>{{ patient.home_address }}</textarea>
+                                            </div>
+                                        </div>
+                                     </div>
                                 </div>
                                 <div class="modal-footer">
                                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -138,16 +145,141 @@
                                     <td>{{ immunization.manufacturer }}</td>
                                     <td>
                                         <a href="#" data-bs-toggle="modal" data-bs-target="#editImmunizationModal{{ immunization.id }}" class="btn btn-warning btn-sm">Edit</a>
-                                        <a href="{{ url_for('main.delete_immunization', immunization_id=immunization.id) }}" class="btn btn-danger btn-sm">Delete</a>
+                                        <form action="{{ url_for('main.delete_immunization', immunization_id=immunization.id) }}" method="POST" style="display:inline;">
+                                            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                                        </form>                                        
                                     </td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
                         </table>
                     </div>
-                    
                 </div>
-    
+
+                <!-- Edit Immunization Modals -->
+                {% for immunization in immunizations %}
+                <div class="modal fade" id="editImmunizationModal{{ immunization.id }}" tabindex="-1" aria-labelledby="editImmunizationModalLabel{{ immunization.id }}" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <form method="POST" action="{{ url_for('main.edit_immunization', patient_id=patient.id, immunization_id=immunization.id) }}">
+                                {{ immunizationform.hidden_tag() }}
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="editImmunizationModalLabel{{ immunization.id }}">Edit Immunization</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="row">
+                                        <!-- Vaccine Code -->
+                                        <div class="col-md-6">
+                                            <div class="form-group mb-3">
+                                                <label for="vaccine_code_{{ immunization.id }}" class="form-label">Vaccine Code</label>
+                                                <select class="form-control" id="vaccine_code_{{ immunization.id }}" name="vaccine_code" required>
+                                                    {% for code, display in immunizationform.vaccine_code.choices %}
+                                                    <option value="{{ code }}" {% if immunization.vaccine_code == code %}selected{% endif %}>
+                                                        {{ display }}
+                                                    </option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <!-- Status -->
+                                        <div class="col-md-6">
+                                            <div class="form-group mb-3">
+                                                <label for="status_{{ immunization.id }}" class="form-label">Status</label>
+                                                <select class="form-control" id="status_{{ immunization.id }}" name="status" required>
+                                                    {% for code, display in immunizationform.status.choices %}
+                                                    <option value="{{ code }}" {% if immunization.status == code %}selected{% endif %}>
+                                                        {{ display }}
+                                                    </option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <!-- Date -->
+                                        <div class="col-md-6">
+                                            <div class="form-group mb-3">
+                                                <label for="date_{{ immunization.id }}" class="form-label">Date Administered</label>
+                                                <input type="date" class="form-control" id="date_{{ immunization.id }}" name="date" value="{{ immunization.date }}" required>
+                                            </div>
+                                        </div>
+
+                                        <!-- Lot Number -->
+                                        <div class="col-md-6">
+                                            <div class="form-group mb-3">
+                                                <label for="lot_number_{{ immunization.id }}" class="form-label">Lot Number</label>
+                                                <input type="text" class="form-control" id="lot_number_{{ immunization.id }}" name="lot_number" value="{{ immunization.lot_number }}">
+                                            </div>
+                                        </div>
+
+                                        <!-- Site -->
+                                        <div class="col-md-6">
+                                            <div class="form-group mb-3">
+                                                <label for="site_{{ immunization.id }}" class="form-label">Site</label>
+                                                <select class="form-control" id="site_{{ immunization.id }}" name="site">
+                                                    {% for code, display in immunizationform.site.choices %}
+                                                    <option value="{{ code }}" {% if immunization.site == code %}selected{% endif %}>
+                                                        {{ display }}
+                                                    </option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <!-- Route -->
+                                        <div class="col-md-6">
+                                            <div class="form-group mb-3">
+                                                <label for="route_{{ immunization.id }}" class="form-label">Route</label>
+                                                <select class="form-control" id="route_{{ immunization.id }}" name="route">
+                                                    {% for code, display in immunizationform.route.choices %}
+                                                    <option value="{{ code }}" {% if immunization.route == code %}selected{% endif %}>
+                                                        {{ display }}
+                                                    </option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <!-- Dose Quantity -->
+                                        <div class="col-md-6">
+                                            <div class="form-group mb-3">
+                                                <label for="dose_quantity_{{ immunization.id }}" class="form-label">Dose Quantity</label>
+                                                <input type="text" class="form-control" id="dose_quantity_{{ immunization.id }}" name="dose_quantity" value="{{ immunization.dose_quantity }}">
+                                            </div>
+                                        </div>
+
+                                        <!-- Manufacturer -->
+                                        <div class="col-md-6">
+                                            <div class="form-group mb-3">
+                                                <label for="manufacturer_{{ immunization.id }}" class="form-label">Manufacturer</label>
+                                                <input type="text" class="form-control" id="manufacturer_{{ immunization.id }}" name="manufacturer" value="{{ immunization.manufacturer }}">
+                                            </div>
+                                        </div>
+
+                                        <!-- Notes -->
+                                        <div class="col-md-12">
+                                            <div class="form-group mb-3">
+                                                <label for="notes_{{ immunization.id }}" class="form-label">Notes</label>
+                                                <textarea class="form-control" id="notes_{{ immunization.id }}" name="notes">{{ immunization.notes }}</textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+
+
+
+                
+
                 <!-- Allergy Tab -->
                 <div class="tab-pane fade" id="allergy" role="tabpanel" aria-labelledby="allergy-tab">
                     <h5>Allergy Information</h5>
@@ -197,11 +329,12 @@
                         <thead>
                             <tr>
                                 <th>Medication Code</th>
+                                <th>Medication Name</th>
                                 <th>Status</th>
                                 <th>Effective Period Start</th>
                                 <th>Effective Period End</th>
                                 <th>Dosage Instruction</th>
-                                <th>Adherence</th>
+                                <th>Timing</th>
                                 <th>Reason</th>
                                 <th>Actions</th>
                             </tr>
@@ -210,15 +343,18 @@
                             {% for medication in medications %}
                             <tr>
                                 <td>{{ medication.medication_code }}</td>
+                                <td>{{ medication.medication_name }}</td>
                                 <td>{{ medication.status }}</td>
                                 <td>{{ medication.effectivePeriod_start }}</td>
                                 <td>{{ medication.effectivePeriod_end }}</td>
                                 <td>{{ medication.dosage_instruction }}</td>
-                                <td>{{ medication.adherence }}</td>
+                                <td>{{ medication.timing }}</td>
                                 <td>{{ medication.reason_code }}</td>
                                 <td>
                                     <a href="#" data-bs-toggle="modal" data-bs-target="#editMedicationModal{{ medication.id }}" class="btn btn-warning btn-sm">Edit</a>
-                                    <a href="{{ url_for('main.delete_medication', medication_id=medication.id) }}" class="btn btn-danger btn-sm">Delete</a>
+                                    <form action="{{ url_for('main.delete_medication', medication_id=medication.id) }}" method="POST" style="display:inline;">
+                                        <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                                    </form> 
                                 </td>
                             </tr>
                             {% endfor %}
@@ -274,7 +410,7 @@
                             <a href="{{ url_for('main.view_visit', visit_id=visit.id) }}" class="btn btn-info btn-sm w-100">View Details</a>
                         </div>
                         <div class="col-md-6">
-                            <button class="text-right btn btn-danger btn-sm w-100" data-bs-toggle="modal" data-bs-target="#deleteVisitModal{{ visit.id }}">
+                            <button class=" btn btn-danger btn-sm w-100" data-bs-toggle="modal" data-bs-target="#deleteVisitModal{{ visit.id }}">
                                 Delete
                             </button>
                             <!-- Confirmation Modal -->

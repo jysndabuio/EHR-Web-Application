@@ -14,12 +14,6 @@
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container-fluid">
             <div class="d-flex align-items-center">
-                <!-- Conditional Return Button -->
-                {% if show_return_button %}
-                <a class="btn btn-outline-light me-2 return-button" href="{{ return_url }}">
-                    <i class="bi bi-arrow-left"></i> Return
-                </a>
-                {% endif %}
                 
                 <!-- Logo -->
                 <a class="navbar-brand pl-2" href="{{ url_for('main.index') }}">
@@ -58,20 +52,22 @@
   {% endwith %}
   
 
-<!-- Content Wrapper -->
-<div class="container-fluid mt-5 px-5">
-    {% block content %}{% endblock %}
-</div>
-
-
+    <!-- Content Wrapper -->
+    <div class="container-fluid mt-5 px-5">
+        {% block content %}{% endblock %}
+    </div>
 
 <!-- Bootstrap JS and Popper -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.min.js"></script>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
-<script src="{{ url_for('static', filename='js/edit_profile.js') }}"></script>
 <script src="{{ url_for('static', filename='js/base.js') }}"></script>
-</body>
+<script src="{{ url_for('static', filename='js/edit_profile.js') }}"></script>
+
+
+
+
 </body>
 </html>
