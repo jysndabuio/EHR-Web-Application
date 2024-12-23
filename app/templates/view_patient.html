@@ -622,20 +622,23 @@
 
     <h3>Appointment</h3>
 
-    {% if latest_appointment %}
-    <div class="card mb-3">
-        <div class="card-header">
-            Next appointment {{ latest_appointment.start.strftime('%Y-%m-%d') }}
-            <a href="{{ url_for('main.view_visit', visit_id=latest_appointment.visit_id) }}" class="btn btn-info btn-sm float-right">View Details</a>
+    {% if latest_appointments and latest_appointments|length > 0 %}
+        {% for appointment in latest_appointments %}
+        <div class="card mb-3">
+            <div class="card-header">
+                Next appointment {{ appointment.start.strftime('%Y-%m-%d') }}
+                <a href="{{ url_for('main.view_visit', visit_id=appointment.visit_id) }}" class="btn btn-info btn-sm float-right">View Details</a>
+            </div>
+            <div class="card-body">
+                <p><strong>Service Category:</strong> {{ appointment.service_category }}</p>
+                <p><strong>Priority:</strong> {{ appointment.priority }}</p>
+            </div>
         </div>
-        <div class="card-body">
-            <p><strong>Visit Type:</strong> {{ latest_appointment.visit_type }}</p>
-            <p><strong>Notes:</strong> {{ latest_appointment.notes }}</p>
-        </div>
-    </div>
+        {% endfor %}
     {% else %}
-    <p>No upcoming appointments available.</p>
+        <p>No upcoming appointments available.</p>
     {% endif %}
+
 
     <h3>Visits</h3>
     <table class="table table-bordered table-hover table-striped outline-table">

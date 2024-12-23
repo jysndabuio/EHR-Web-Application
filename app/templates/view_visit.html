@@ -663,7 +663,7 @@
 
     <!-- Add Appointment Modal -->
     <div class="modal fade" id="appointmentModal" tabindex="-1" aria-labelledby="appointmentModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <form method="POST" action="{{ url_for('main.add_appointment', visit_id=visit.id) }}">
                     {{ appointmentform.hidden_tag() }}
@@ -685,36 +685,35 @@
                                     <label for="end" class="form-label">End Time</label>
                                     <input type="datetime-local" class="form-control" id="end" name="end">
                                 </div>
-
-                                <!-- Status -->
-                                <div class="form-group mb-3">
-                                    <label for="status" class="form-label">Status</label>
-                                    <select class="form-control" id="status" name="status" required>
-                                        {% for code, display in appointmentform.status.choices %}
-                                        <option value="{{ code }}">{{ display }}</option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
                                 <!-- Service Category -->
                                 <div class="form-group mb-3">
                                     <label for="service_category" class="form-label">Service Category</label>
-                                    <input type="text" class="form-control" id="service_category" name="service_category">
+                                    <select class="form-control" id="service_category" name="service_category">
+                                        {% for code, display in appointmentform.service_category.choices %}
+                                        <option value="{{ code }}">{{ display }}</option>
+                                        {% endfor %}
+                                    </select>
                                 </div>
 
                                 <!-- Service Type -->
                                 <div class="form-group mb-3">
                                     <label for="service_type" class="form-label">Service Type</label>
-                                    <input type="text" class="form-control" id="service_type" name="service_type">
+                                    <select class="form-control" id="service_type" name="service_type">
+                                        {% for code, display in appointmentform.service_type.choices %}
+                                        <option value="{{ code }}">{{ display }}</option>
+                                        {% endfor %}
+                                    </select>
                                 </div>
 
                                 <!-- Specialty -->
                                 <div class="form-group mb-3">
                                     <label for="specialty" class="form-label">Specialty</label>
-                                    <input type="text" class="form-control" id="specialty" name="specialty">
+                                    <select class="form-control" id="specialty" name="specialty">
+                                        {% for code, display in appointmentform.specialty.choices %}
+                                        <option value="{{ code }}">{{ display }}</option>
+                                        {% endfor %}
+                                    </select>
                                 </div>
-
                                 <!-- Appointment Type -->
                                 <div class="form-group mb-3">
                                     <label for="appointment_type" class="form-label">Appointment Type</label>
@@ -724,12 +723,51 @@
                                         {% endfor %}
                                     </select>
                                 </div>
-
+                            </div>
+                            <div class="col-md-6">
                                 <!-- Priority -->
                                 <div class="form-group mb-3">
                                     <label for="priority" class="form-label">Priority</label>
                                     <select class="form-control" id="priority" name="priority">
                                         {% for code, display in appointmentform.priority.choices %}
+                                        <option value="{{ code }}">{{ display }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <!-- Participant Actor -->
+                                <div class="form-group mb-3">
+                                    <label for="participant_actor" class="form-label">Participant Actor</label>
+                                    <select class="form-control" id="participant_actor" name="participant_actor">
+                                        {% for code, display in appointmentform.participant_actor.choices %}
+                                        <option value="{{ code }}">{{ display }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <!-- Participant Status -->
+                                <div class="form-group mb-3">
+                                    <label for="participant_status" class="form-label">Participant Status</label>
+                                    <select class="form-control" id="participant_status" name="participant_status">
+                                        {% for code, display in appointmentform.participant_status.choices %}
+                                        <option value="{{ code }}">{{ display }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <!-- Reason Code -->
+                                <div class="form-group mb-3">
+                                    <label for="reason_code" class="form-label">Reason Code</label>
+                                    <select class="form-control" id="reason_code" name="reason_code">
+                                        {% for code, display in appointmentform.reason_code.choices %}
+                                        <option value="{{ code }}">{{ display }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <!-- Status -->
+                                <div class="form-group mb-3">
+                                    <label for="status" class="form-label">Status</label>
+                                    <select class="form-control" id="status" name="status" required>
+                                        {% for code, display in appointmentform.status.choices %}
                                         <option value="{{ code }}">{{ display }}</option>
                                         {% endfor %}
                                     </select>
@@ -761,24 +799,112 @@
                     </div>
                     <div class="modal-body">
                         <div class="row">
-                            <!-- Start Time -->
                             <div class="col-md-6">
+                                <!-- Start Time -->
                                 <div class="form-group mb-3">
-                                    <label for="start_{{ appointment.id }}" class="form-label">Start Time</label>
-                                    <input type="datetime-local" class="form-control" id="start_{{ appointment.id }}" name="start" value="{{ appointment.start.isoformat()[:-1] }}" required>
+                                    <div class="form-group mb-3">
+                                        <label for="start_{{ appointment.id }}" class="form-label">Start Time</label>
+                                        <input type="datetime-local" class="form-control" id="start_{{ appointment.id }}" name="start" value="{{ appointment.start.strftime('%Y-%m-%dT%H:%M') if appointment.start else '' }}" required>
+                                    </div>
+                                </div>
+
+                                <!-- End Time -->
+                                <div class="form-group mb-3">
+                                    <div class="form-group mb-3">
+                                        <label for="end_{{ appointment.id }}" class="form-label">End Time</label>
+                                        <input type="datetime-local" class="form-control" id="end_{{ appointment.id }}" name="end" value="{{ appointment.end.strftime('%Y-%m-%dT%H:%M') if appointment.end else '' }}">
+                                    </div>
+                                </div>
+                            
+                                <div class="form-group mb-3">
+                                    <label for="service_category_{{ appointment.id }}" class="form-label">Service Category</label>
+                                    <select class="form-control" id="service_category_{{ appointment.id }}" name="service_category">
+                                        {% for code, display in appointmentform.service_category.choices %}
+                                        <option value="{{ code }}" {% if appointment.service_category == code %}selected{% endif %}>
+                                            {{ display }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                           
+
+                                <div class="form-group mb-3">
+                                    <label for="service_type_{{ appointment.id }}" class="form-label">Service Type</label>
+                                    <select class="form-control" id="service_type_{{ appointment.id }}" name="service_type">
+                                        {% for code, display in appointmentform.service_type.choices %}
+                                        <option value="{{ code }}" {% if appointment.service_type == code %}selected{% endif %}>
+                                            {{ display }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                        
+
+                    
+                                <div class="form-group mb-3">
+                                    <label for="specialty_{{ appointment.id }}" class="form-label">Specialty</label>
+                                    <select class="form-control" id="specialty_{{ appointment.id }}" name="specialty">
+                                        {% for code, display in appointmentform.specialty.choices %}
+                                        <option value="{{ code }}" {% if appointment.specialty == code %}selected{% endif %}>
+                                            {{ display }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                           
+
+                                <div class="form-group mb-3">
+                                    <label for="appointment_type_{{ appointment.id }}" class="form-label">Appointment Type</label>
+                                    <select class="form-control" id="appointment_type_{{ appointment.id }}" name="appointment_type">
+                                        {% for code, display in appointmentform.appointment_type.choices %}
+                                        <option value="{{ code }}" {% if appointment.appointment_type == code %}selected{% endif %}>
+                                            {{ display }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
                                 </div>
                             </div>
-
-                            <!-- End Time -->
                             <div class="col-md-6">
                                 <div class="form-group mb-3">
-                                    <label for="end_{{ appointment.id }}" class="form-label">End Time</label>
-                                    <input type="datetime-local" class="form-control" id="end_{{ appointment.id }}" name="end" value="{{ appointment.end.isoformat()[:-1] }}" required>
+                                    <label for="participant_actor_{{ appointment.id }}" class="form-label">Participant Actor</label>
+                                    <select class="form-control" id="participant_actor_{{ appointment.id }}" name="participant_actor">
+                                        {% for code, display in appointmentform.participant_actor.choices %}
+                                        <option value="{{ code }}" {% if appointment.participant_actor == code %}selected{% endif %}>
+                                            {{ display }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
                                 </div>
-                            </div>
-
-                            <!-- Status -->
-                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="priority_{{ appointment.id }}" class="form-label">Priority</label>
+                                    <select class="form-control" id="priority_{{ appointment.id }}" name="priority">
+                                        {% for code, display in appointmentform.priority.choices %}
+                                        <option value="{{ code }}" {% if appointment.priority == code %}selected{% endif %}>
+                                            {{ display }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="form-group mb-3">
+                                    <label for="participant_status_{{ appointment.id }}" class="form-label">Participant Status</label>
+                                    <select class="form-control" id="participant_status_{{ appointment.id }}" name="participant_status">
+                                        {% for code, display in appointmentform.participant_status.choices %}
+                                        <option value="{{ code }}" {% if appointment.participant_status == code %}selected{% endif %}>
+                                            {{ display }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="form-group mb-3">
+                                    <label for="reason_code_{{ appointment.id }}" class="form-label">Reason Code</label>
+                                    <select class="form-control" id="reason_code_{{ appointment.id }}" name="reason_code">
+                                        {% for code, display in appointmentform.reason_code.choices %}
+                                        <option value="{{ code }}" {% if appointment.reason_code == code %}selected{% endif %}>
+                                            {{ display }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
                                 <div class="form-group mb-3">
                                     <label for="status_{{ appointment.id }}" class="form-label">Status</label>
                                     <select class="form-control" id="status_{{ appointment.id }}" name="status" required>
@@ -790,40 +916,7 @@
                                     </select>
                                 </div>
                             </div>
-
-                            <!-- Service Category -->
-                            <div class="col-md-6">
-                                <div class="form-group mb-3">
-                                    <label for="service_category_{{ appointment.id }}" class="form-label">Service Category</label>
-                                    <input type="text" class="form-control" id="service_category_{{ appointment.id }}" name="service_category" value="{{ appointment.service_category }}">
-                                </div>
-                            </div>
-
-                            <!-- Service Type -->
-                            <div class="col-md-6">
-                                <div class="form-group mb-3">
-                                    <label for="service_type_{{ appointment.id }}" class="form-label">Service Type</label>
-                                    <input type="text" class="form-control" id="service_type_{{ appointment.id }}" name="service_type" value="{{ appointment.service_type }}">
-                                </div>
-                            </div>
-
-                            <!-- Specialty -->
-                            <div class="col-md-6">
-                                <div class="form-group mb-3">
-                                    <label for="specialty_{{ appointment.id }}" class="form-label">Specialty</label>
-                                    <input type="text" class="form-control" id="specialty_{{ appointment.id }}" name="specialty" value="{{ appointment.specialty }}">
-                                </div>
-                            </div>
-
-                            <!-- Reason -->
-                            <div class="col-md-12">
-                                <div class="form-group mb-3">
-                                    <label for="reason_code_{{ appointment.id }}" class="form-label">Reason</label>
-                                    <textarea class="form-control" id="reason_code_{{ appointment.id }}" name="reason_code">{{ appointment.reason_code }}</textarea>
-                                </div>
-                            </div>
                         </div>
-                    </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                         <button type="submit" class="btn btn-primary">Save Changes</button>
@@ -833,6 +926,7 @@
         </div>
     </div>
     {% endfor %}
+
 
   
 </div>

@@ -282,16 +282,16 @@ class AppointmentForm(FlaskForm):
     doctor_id = HiddenField('Doctor ID', validators=[DataRequired()])
     visit_id = HiddenField('Visit ID', validators=[Optional()])
     status = SelectField('Status', choices=[], validators=[DataRequired()])
-    service_category = StringField('Service Category', validators=[Optional(), Length(max=100)])
-    service_type = StringField('Service Type', validators=[Optional(), Length(max=100)])
-    specialty = StringField('Specialty', validators=[Optional(), Length(max=100)])
+    service_category = SelectField('Service Category', choices=[], validators=[Optional(), Length(max=100)])
+    service_type = SelectField('Service Type', choices=[], validators=[Optional(), Length(max=100)])
+    specialty = SelectField('Specialty', choices=[], validators=[Optional(), Length(max=100)])
     appointment_type = SelectField('Appointment Type', choices=[], validators=[Optional()])
-    reason_code = TextAreaField('Reason Code', validators=[Optional(), Length(max=255)])
+    reason_code = SelectField('Reason Code', choices=[],  validators=[Optional(), Length(max=255)])
     priority = SelectField('Priority', choices=[], validators=[Optional()])
     start = DateTimeField('Start Date and Time', validators=[DataRequired()], format='%Y-%m-%d %H:%M:%S')
     end = DateTimeField('End Date and Time', validators=[Optional()], format='%Y-%m-%d %H:%M:%S')
-    participant_actor = StringField('Participant Actor', validators=[Optional(), Length(max=50)])
-    participant_status = StringField('Participant Status', validators=[Optional(), Length(max=20)])
+    participant_actor = SelectField('Participant Actor', choices=[], validators=[Optional(), Length(max=50)])
+    participant_status = SelectField('Participant Status', choices=[], validators=[Optional(), Length(max=20)])
 
     def __init__(self, *args, **kwargs):
         super(AppointmentForm, self).__init__(*args, **kwargs)
@@ -304,7 +304,22 @@ class AppointmentForm(FlaskForm):
 
         # Dynamically populate choices for priority
         self.priority.choices = [(priority['code'], priority['display']) for priority in Appointment.get_priority_options()]
+        # Dynamically populate choices for service category
+        self.service_category.choices = [(category['code'], category['display']) for category in Appointment.get_service_categories()]
 
+        # Dynamically populate choices for service type
+        self.service_type.choices = [(service['code'], service['display']) for service in Appointment.get_service_types()]
+
+        # Dynamically populate choices for specialty
+        self.specialty.choices = [(specialty['code'], specialty['display']) for specialty in Appointment.get_specialties()]
+
+        # Dynamically populate choices for participant actor
+        self.participant_actor.choices = [(actor['code'], actor['display']) for actor in Appointment.get_participant_actors()]
+
+        # Dynamically populate choices for participant status
+        self.participant_status.choices = [(status['code'], status['display']) for status in Appointment.get_participant_statuses()]
+
+        self.reason_code.choices = [(status['code'], status['display']) for status in Appointment.get_reason_codes()]
 
 class AddVisitForm(FlaskForm):
     visit_date = DateField('Visit Date', default=date.today, validators=[DataRequired()])

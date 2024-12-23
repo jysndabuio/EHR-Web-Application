@@ -187,9 +187,9 @@ def view_patient(patient_id):
         return redirect(url_for('main.doctor_dashboard'))
     
     # Get the latest appointment
-    latest_appointment = (
-        sorted(patient.appointments, key=lambda x: x.start, reverse=True)[0]
-        if patient.appointments else None
+    latest_appointments = (
+        sorted(patient.appointments, key=lambda x: x.start, reverse=True)[:3]
+        if patient.appointments else  []
     )
     
     # Map reason codes to their descriptions
@@ -217,7 +217,7 @@ def view_patient(patient_id):
     return render_template(
         'view_patient.html', 
         patient=patient, 
-        latest_appointment=latest_appointment,
+        latest_appointments=latest_appointments,
         sorted_visits=sorted_visits,
         immunizations=patient.immunizations,
         allergies=patient.allergies,
@@ -282,6 +282,23 @@ def view_visit(visit_id):
                            show_return_button=True, 
                             return_url=request.referrer)
 
+@bp.route('/view_appointments')
+@login_required
+def view_appointments():
+    # Get the current datetime to filter future appointments
+    now = datetime.now()
+
+    # Query all appointments for the current doctor and use joinedload to load the patient data
+    all_appointments = Appointment.query.filter_by(doctor_id=current_user.id).options(joinedload(Appointment.patient)).all()
+    
+
+    # Filter and sort appointments by start time
+    # Only include appointments that are in the future
+    upcoming_appointments = [appointment for appointment in all_appointments if appointment.start > now]
+    sorted_appointments = sorted(upcoming_appointments, key=lambda x: x.start)
+
+    # Return the rendered template with the list of appointments
+    return render_template('view_appointments.html', appointments=sorted_appointments)
 
 
 
@@ -625,6 +642,8 @@ def add_appointment(visit_id):
         specialty = request.form.get('specialty')
         appointment_type = request.form.get('appointment_type')
         priority = request.form.get('priority')
+        participant_actor = request.form.get('participant_actor')
+        participant_status = request.form.get('participant_status')
         reason_code = request.form.get('reason_code')
 
         # Create a new appointment instance
@@ -640,6 +659,8 @@ def add_appointment(visit_id):
             specialty=specialty,
             appointment_type=appointment_type,
             priority=priority,
+            participant_actor=participant_actor,
+            participant_status=participant_status,
             reason_code=reason_code,
         )
 
@@ -648,7 +669,7 @@ def add_appointment(visit_id):
         db.session.commit()
 
         flash('Appointment added successfully.', 'success')
-        return redirect(url_for('main.view_patient', patient_id=visit.patient_id))
+        return redirect(url_for('main.view_visit', visit_id=visit.id))
 
     # Pass the visit and form to the template
     return render_template(
@@ -945,7 +966,7 @@ def edit_appointment(patient_id, appointment_id):
         # Commit changes to the database
         db.session.commit()
         flash('Appointment updated successfully.', 'success')
-        return redirect(url_for('main.view_patient', patient_id=patient.id))
+        return redirect(url_for('main.view_visit', visit_id=appointment.visit.id))
 
     return render_template(
         'edit_appointment.html',

@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container-fluid mt-5">
+    <h1>All Upcoming Appointments</h1>
+
+    {% if appointments %}
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Patient</th>
+                <th>Start Time</th>
+                <th>End Time</th>
+                <th>Service Category</th>
+                <th>Priority</th>
+                <th>Status</th>
+                <th>View Details</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for appointment in appointments %}
+            <tr>
+                <td>{{ appointment.patient.firstname }} {{ appointment.patient.lastname }}</td>  <!-- Assuming each appointment has a relationship with the Patient model -->
+                <td>{{ appointment.start.strftime('%Y-%m-%d %H:%M') }}</td>
+                <td>{{ appointment.end.strftime('%Y-%m-%d %H:%M') if appointment.end else 'N/A' }}</td>
+                <td>{{ appointment.service_category }}</td>
+                <td>{{ appointment.priority }}</td>
+                <td>{{ appointment.status }}</td>
+                <td><a href="{{ url_for('main.view_visit', visit_id=appointment.visit_id) }}" class="btn btn-info btn-sm">View Details</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>No upcoming appointments available.</p>
+    {% endif %}
+</div>
+{% endblock %}

@@ -631,19 +631,102 @@ class Appointment(UserMixin, db.Model):
         ]
     
     @staticmethod
+    def get_service_types():
+        return [
+            {"code": "consultation", "display": "Consultation"},
+            {"code": "follow-up", "display": "Follow-Up"},
+            {"code": "immunization", "display": "Immunization"},
+            {"code": "diagnostic-test", "display": "Diagnostic Test"},
+            {"code": "screening", "display": "Screening"},
+            {"code": "therapy", "display": "Therapy"},
+            {"code": "surgery", "display": "Surgery"}
+        ]
+    
+    @staticmethod
+    def get_specialties():
+        return [
+            {"code": "general-practice", "display": "General Practice"},
+            {"code": "cardiology", "display": "Cardiology"},
+            {"code": "dermatology", "display": "Dermatology"},
+            {"code": "orthopedics", "display": "Orthopedics"},
+            {"code": "pediatrics", "display": "Pediatrics"},
+            {"code": "psychiatry", "display": "Psychiatry"},
+            {"code": "gynecology", "display": "Gynecology"},
+            {"code": "urology", "display": "Urology"},
+            {"code": "immunology", "display": "Immunology"},
+            {"code": "neurology", "display": "Neurology"}
+        ]
+    
+
+    @staticmethod
+    def get_service_categories():
+        return [
+            {"code": "general-practice", "display": "General Practice"},
+            {"code": "cardiology", "display": "Cardiology"},
+            {"code": "dermatology", "display": "Dermatology"},
+            {"code": "orthopedics", "display": "Orthopedics"},
+            {"code": "pediatrics", "display": "Pediatrics"},
+            {"code": "psychiatry", "display": "Psychiatry"},
+            {"code": "gynecology", "display": "Gynecology"},
+            {"code": "urology", "display": "Urology"},
+            {"code": "immunology", "display": "Immunology"}
+        ]
+    
+    @staticmethod
     def get_appointment_types():
         return [
             {"code": "routine", "display": "Routine"},
-            {"code": "urgent", "display": "Urgent"}
+            {"code": "urgent", "display": "Urgent"},
+            {"code": "walk-in", "display": "Walk-In"},
+            {"code": "emergency", "display": "Emergency"}
         ]
 
     @staticmethod
     def get_priority_options():
         return [
+            {"code": "low", "display": "Low"},
             {"code": "routine", "display": "Routine"},
-            {"code": "urgent", "display": "Urgent"}
+            {"code": "urgent", "display": "Urgent"},
+            {"code": "high", "display": "High"}
         ]
 
+    @staticmethod
+    def get_participant_actors():
+        return [
+            {"code": "patient", "display": "Patient"},
+            {"code": "practitioner", "display": "Practitioner"},
+            {"code": "related-person", "display": "Related Person"},
+            {"code": "organization", "display": "Organization"}
+        ]
+
+    @staticmethod
+    def get_participant_statuses():
+        return [
+            {"code": "accepted", "display": "Accepted"},
+            {"code": "declined", "display": "Declined"},
+            {"code": "tentative", "display": "Tentative"},
+            {"code": "needs-action", "display": "Needs Action"}
+        ]
+    
+    @staticmethod
+    def get_reason_codes():
+        return [
+            {"code": "routine", "display": "Routine Check-up"},
+            {"code": "urgent", "display": "Urgent Consultation"},
+            {"code": "followup", "display": "Follow-up Appointment"},
+            {"code": "diagnostic", "display": "Diagnostic Test"},
+            {"code": "referral", "display": "Specialist Referral"},
+            {"code": "vaccination", "display": "Vaccination"},
+            {"code": "emergency", "display": "Emergency"},
+            {"code": "chronic", "display": "Chronic Condition Management"},
+            {"code": "physical_therapy", "display": "Physical Therapy"},
+            {"code": "surgery_consultation", "display": "Consultation for Surgery"},
+            {"code": "mental_health", "display": "Mental Health Consultation"},
+            {"code": "screening", "display": "Preventive Screening"},
+            {"code": "health_maintenance", "display": "Health Maintenance"},
+            {"code": "prescription_renewal", "display": "Prescription Renewal"},
+            {"code": "preoperative", "display": "Pre-Operative Consultation"}
+        ]
 class MedicalHistory(UserMixin, db.Model):
     __tablename__ = 'medical_history'
 
