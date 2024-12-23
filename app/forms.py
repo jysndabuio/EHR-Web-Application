@@ -2,8 +2,8 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField,FormField,FieldList,DateTimeField,TextAreaField, DateField, PasswordField, SelectField, TelField, SubmitField, HiddenField, EmailField, IntegerField, RadioField
 from wtforms.validators import DataRequired, Email, EqualTo, Length, Regexp, NumberRange, Optional
-from datetime import date
-from .models import MedicationStatement, Observation
+from datetime import date, datetime
+from .models import MedicationStatement, Observation, AllergyIntolerance, Vitals, Procedure,Appointment, MedicalHistory
 
 class RegisterForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired(), Length(min=4, max=20)])
@@ -126,11 +126,7 @@ class MedicationStatementForm(FlaskForm):
         self.adherence.choices = [(adherence['code'], adherence['display']) for adherence in MedicationStatement.get_adherence_codes()]
 
         # Dynamically populate choices for category
-        self.category.choices = [
-            ('outpatient', 'Outpatient'),
-            ('inpatient', 'Inpatient'),
-            ('virtual', 'Virtual')
-        ]
+        self.category.choices = [(adherence['code'], adherence['display']) for adherence in MedicationStatement.get_category_codes()]
 
 
 class VisitForm(FlaskForm):
@@ -141,15 +137,11 @@ class VisitForm(FlaskForm):
     medications = FieldList(FormField(MedicationStatementForm), min_entries=1, max_entries=10)
     notes = TextAreaField('Notes', validators=[Optional()])
 
-from flask_wtf import FlaskForm
-from wtforms import StringField, SelectField, DateTimeField, HiddenField, TextAreaField
-from wtforms.validators import DataRequired, Optional, Length
-from datetime import datetime
 
 class ObservationForm(FlaskForm):
     visit_id = HiddenField('Visit ID', validators=[Optional()])
     patient_id = HiddenField('Patient ID', validators=[DataRequired()])
-    code = StringField('Observation Code', validators=[DataRequired(), Length(max=100)])  # LOINC or SNOMED code
+    code = SelectField('Observation Code', choices=[], validators=[DataRequired(), Length(max=100)])  # LOINC or SNOMED code
     value = StringField('Observation Value', validators=[Optional(), Length(max=255)])  # Value of the observation
     status = SelectField('Status', choices=[], validators=[DataRequired()])  # Empty choices, will be populated dynamically
     category = SelectField('Category', choices=[], validators=[Optional()])  # Empty choices, will be populated dynamically
@@ -166,47 +158,81 @@ class ObservationForm(FlaskForm):
         
         # Dynamically populate choices for category
         # Dynamically populate choices for status
-        self.category.choices = [(status['code'], status['display']) for status in Observation.get_category_options()]
+        self.category.choices = [(category['code'], category['display']) for category in Observation.get_category_options()]
         
         # Dynamically populate choices for code
-        self.code.choices = [(status['code'], status['display']) for status in Observation.get_code_options()]
+        self.code.choices = [(code['code'], code['display']) for code in Observation.get_code_options()]
 
 
 
 
 class ProcedureForm(FlaskForm):
-    visit_id = HiddenField('Visit ID', validators=[DataRequired()])
-    patient_id = HiddenField('Patient ID', validators=[DataRequired()])
-    code = StringField('Procedure Code', validators=[DataRequired(), Length(max=100)])
-    status = SelectField('Status', choices=[('preparation', 'Preparation'), ('in-progress', 'In Progress'), ('completed', 'Completed'), ('entered-in-error', 'Entered in Error')], validators=[Optional()])
-    performed_date = DateField('Performed Date', validators=[Optional()])
-    performer_id = HiddenField('Performer ID', validators=[Optional()])
-    notes = TextAreaField('Notes', validators=[Optional()])
+    patient_id = StringField('Patient ID', validators=[DataRequired()])
+    status = SelectField('Status', choices=[], validators=[DataRequired()])
+    category = SelectField('Category', choices=[], validators=[DataRequired()])
+    code = StringField('Procedure Code')
+    performed_date = DateField('Performed Date')
+    reason_code = StringField('Reason Code')
+    outcome = SelectField('Outcome', choices=[], validators=[DataRequired()])
+    report = TextAreaField('Report')
+    submit = SubmitField('Save')
+
+    def __init__(self, *args, **kwargs):
+        super(ProcedureForm, self).__init__(*args, **kwargs)
+        self.status.choices = [(
+            status['code'], status['display']) for status in Procedure.get_status_options()]
+        self.category.choices = [(
+            category['code'], category['display']) for category in Procedure.get_category_options()]
+        self.outcome.choices = [(
+            outcome['code'], outcome['display']) for outcome in Procedure.get_outcome_options()]
+
 
 class VitalsForm(FlaskForm):
-    visit_id = HiddenField('Visit ID', validators=[DataRequired()])
-    patient_id = HiddenField('Patient ID', validators=[DataRequired()])
-    type = StringField('Vital Type', validators=[DataRequired(), Length(max=50)])
-    value = StringField('Value', validators=[DataRequired(), Length(max=50)])
-    unit = StringField('Unit', validators=[DataRequired(), Length(max=20)])
-    date_recorded = DateTimeField('Date Recorded', validators=[DataRequired()], format='%Y-%m-%d %H:%M:%S')
+    patient_id = StringField('Patient ID', validators=[DataRequired()])
+    status = SelectField('Status', choices=[], validators=[DataRequired()])
+    category = SelectField('Category', choices=[], validators=[DataRequired()])
+    code = StringField('Code')
+    effective_date = DateTimeField('Effective Date', format='%Y-%m-%dT%H:%M', validators=[DataRequired()])
+    value = StringField('Value')
+    unit = SelectField('Unit', choices=[], validators=[DataRequired()])
+    submit = SubmitField('Save')
+
+    def __init__(self, *args, **kwargs):
+        super(VitalsForm, self).__init__(*args, **kwargs)
+        self.status.choices = [(
+            status['code'], status['display']) for status in Vitals.get_status_options()]
+        self.category.choices = [(
+            category['code'], category['display']) for category in Vitals.get_category_options()]
+        self.unit.choices = [(
+            unit['code'], unit['display']) for unit in Vitals.get_unit_options()]
 
 class AllergyIntoleranceForm(FlaskForm):
-    visit_id = HiddenField('Visit ID', validators=[DataRequired()])
+    # Hidden fields for patient and visit IDs
     patient_id = HiddenField('Patient ID', validators=[DataRequired()])
-    substance = StringField('Substance', validators=[DataRequired(), Length(max=100)])
-    clinical_status = SelectField('Clinical Status', choices=[], validators=[Optional()])
-    verification_status = SelectField('Verification Status', choices=[], validators=[Optional()])
-    severity = SelectField('Severity', choices=[], validators=[Optional()])
-    category = SelectField('Category', choices=[], validators=[Optional()])
-    reaction = TextAreaField('Reaction', validators=[Optional()])
-    onset = DateField('Onset Date', validators=[Optional()])
+    visit_id = HiddenField('Visit ID', validators=[DataRequired()])
+    
+    # Main fields from the model
+    substance = StringField('Substance', validators=[DataRequired(), Length(max=100)])  # Substance field
+    clinical_status = SelectField('Clinical Status', validators=[Optional()])  # Clinical status dropdown
+    verification_status = SelectField('Verification Status', validators=[Optional()])  # Verification status dropdown
+    severity = SelectField('Severity', validators=[Optional()])  # Severity dropdown
+    type = StringField('Type', validators=[Optional(), Length(max=20)])  # Type field (optional)
+    category = SelectField('Category', validators=[Optional()])  # Category dropdown
+    reaction = TextAreaField('Reaction', validators=[Optional()])  # Reaction text field
+    onset = SelectField('Onset', validators=[Optional()])  # Onset dropdown with Immediate/Delayed choices
 
-     # Dynamically set the choices for clinical_status, verification_status, severity, and category
-    #form.clinical_status.choices = [(status['code'], status['display']) for status in AllergyIntolerance.get_clinical_status_codes()]
-    #form.verification_status.choices = [(status['code'], status['display']) for status in AllergyIntolerance.get_verification_status_codes()]
-    #form.severity.choices = [(level['code'], level['display']) for level in AllergyIntolerance.get_severity_levels()]
-    #form.category.choices = [(category['code'], category['display']) for category in AllergyIntolerance.get_category_options()]
+    # Dynamically populate choices for select fields in the constructor
+    def __init__(self, *args, **kwargs):
+        super(AllergyIntoleranceForm, self).__init__(*args, **kwargs)
+        
+        # Dynamically load the choices for clinical_status, verification_status, severity, and category
+        self.clinical_status.choices = [(status['code'], status['display']) for status in AllergyIntolerance.get_clinical_status_codes()]
+        self.verification_status.choices = [(status['code'], status['display']) for status in AllergyIntolerance.get_verification_status_codes()]
+        self.severity.choices = [(severity['code'], severity['display']) for severity in AllergyIntolerance.get_severity_levels()]
+        self.category.choices = [(category['code'], category['display']) for category in AllergyIntolerance.get_category_options()]
+        self.onset.choices = [(onset['code'], onset['display']) for onset in AllergyIntolerance.get_onset_choices()]
+
+
 
 
 
@@ -231,22 +257,54 @@ class ImmunizationForm(FlaskForm):
 
 
 class MedicalHistoryForm(FlaskForm):
-    visit_id = HiddenField('Visit ID', validators=[Optional()])
-    patient_id = HiddenField('Patient ID', validators=[DataRequired()])
-    condition = StringField('Condition', validators=[DataRequired(), Length(max=100)])
-    onset_date = DateField('Onset Date', validators=[Optional()])
-    resolution_date = DateField('Resolution Date', validators=[Optional()])
-    notes = TextAreaField('Notes', validators=[Optional()])
+    patient_id = StringField('Patient ID', validators=[DataRequired()])
+    clinical_status = SelectField('Clinical Status', choices=[], validators=[DataRequired()])
+    verification_status = SelectField('Verification Status', choices=[], validators=[DataRequired()])
+    category = SelectField('Category', choices=[], validators=[DataRequired()])
+    code = StringField('Condition Code')
+    onset_date = DateField('Onset Date')
+    abatement_date = DateField('Abatement Date')
+    notes = TextAreaField('Notes')
+    submit = SubmitField('Save')
 
+    def __init__(self, *args, **kwargs):
+        super(MedicalHistoryForm, self).__init__(*args, **kwargs)
+        self.clinical_status.choices = [(
+            status['code'], status['display']) for status in MedicalHistory.get_clinical_status_options()]
+        self.verification_status.choices = [(
+            status['code'], status['display']) for status in MedicalHistory.get_verification_status_options()]
+        self.category.choices = [(
+            category['code'], category['display']) for category in MedicalHistory.get_category_options()]
 
 class AppointmentForm(FlaskForm):
-    visit_id = HiddenField('Visit ID', validators=[Optional()])
+    id = HiddenField('Appointment ID', validators=[Optional()])
     patient_id = HiddenField('Patient ID', validators=[DataRequired()])
     doctor_id = HiddenField('Doctor ID', validators=[DataRequired()])
-    start = DateTimeField('Start Time', validators=[DataRequired()], format='%Y-%m-%d %H:%M:%S')
-    end = DateTimeField('End Time', validators=[Optional()], format='%Y-%m-%d %H:%M:%S')
-    status = SelectField('Status', choices=[('proposed', 'Proposed'), ('pending', 'Pending'), ('booked', 'Booked'), ('arrived', 'Arrived'), ('fulfilled', 'Fulfilled'), ('cancelled', 'Cancelled'), ('noshow', 'No Show')], validators=[Optional()])
-    reason = TextAreaField('Reason', validators=[Optional(), Length(max=255)])
+    visit_id = HiddenField('Visit ID', validators=[Optional()])
+    status = SelectField('Status', choices=[], validators=[DataRequired()])
+    service_category = StringField('Service Category', validators=[Optional(), Length(max=100)])
+    service_type = StringField('Service Type', validators=[Optional(), Length(max=100)])
+    specialty = StringField('Specialty', validators=[Optional(), Length(max=100)])
+    appointment_type = SelectField('Appointment Type', choices=[], validators=[Optional()])
+    reason_code = TextAreaField('Reason Code', validators=[Optional(), Length(max=255)])
+    priority = SelectField('Priority', choices=[], validators=[Optional()])
+    start = DateTimeField('Start Date and Time', validators=[DataRequired()], format='%Y-%m-%d %H:%M:%S')
+    end = DateTimeField('End Date and Time', validators=[Optional()], format='%Y-%m-%d %H:%M:%S')
+    participant_actor = StringField('Participant Actor', validators=[Optional(), Length(max=50)])
+    participant_status = StringField('Participant Status', validators=[Optional(), Length(max=20)])
+
+    def __init__(self, *args, **kwargs):
+        super(AppointmentForm, self).__init__(*args, **kwargs)
+
+        # Dynamically populate choices for status
+        self.status.choices = [(status['code'], status['display']) for status in Appointment.get_status_options()]
+
+        # Dynamically populate choices for appointment type
+        self.appointment_type.choices = [(atype['code'], atype['display']) for atype in Appointment.get_appointment_types()]
+
+        # Dynamically populate choices for priority
+        self.priority.choices = [(priority['code'], priority['display']) for priority in Appointment.get_priority_options()]
+
 
 class AddVisitForm(FlaskForm):
     visit_date = DateField('Visit Date', default=date.today, validators=[DataRequired()])

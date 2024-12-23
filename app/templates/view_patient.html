@@ -122,6 +122,7 @@
                             <thead>
                                 <tr>
                                     <th>Vaccine Code</th>
+                                    <th>Vaccine Description</th>
                                     <th>Status</th>
                                     <th>Date</th>
                                     <th>Lot Number</th>
@@ -134,8 +135,9 @@
                             </thead>
                             <tbody>
                                 {% for immunization in immunizations %}
-                                <tr>
+                                <tr class="{% if immunization.status == 'completed' %}table-success{% endif %}">
                                     <td>{{ immunization.vaccine_code }}</td>
+                                    <td>{{ immunization.vaccine_code_description }} </td>
                                     <td>{{ immunization.status }}</td>
                                     <td>{{ immunization.date }}</td>
                                     <td>{{ immunization.lot_number }}</td>
@@ -276,7 +278,7 @@
                 </div>
                 {% endfor %}
 
-
+                
 
                 
 
@@ -318,7 +320,6 @@
                                 </tbody>
                             </table>
                         </div>
-                        
                 </div>
 
 
@@ -341,7 +342,7 @@
                         </thead>
                         <tbody>
                             {% for medication in medications %}
-                            <tr>
+                            <tr class="{% if medication.status == 'completed' %}table-success{% endif %}">
                                 <td>{{ medication.medication_code }}</td>
                                 <td>{{ medication.medication_name }}</td>
                                 <td>{{ medication.status }}</td>
@@ -361,6 +362,260 @@
                         </tbody>
                     </table>
                 </div>
+
+                <!-- Edit Medication Modals -->
+                {% for medication in medications %}
+                <div class="modal fade" id="editMedicationModal{{ medication.id }}" tabindex="-1" aria-labelledby="editMedicationModalLabel{{ medication.id }}" aria-hidden="true">
+                    <div class="modal-dialog modal-xl">
+                        <div class="modal-content">
+                            <form method="POST" action="{{ url_for('main.edit_medication', patient_id=patient.id, medication_id=medication.id) }}">
+                                {{ medicationform.hidden_tag() }}
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="editMedicationModalLabel{{ medication.id }}">Edit Medication</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <!-- Medication Code -->
+                                            <div class="form-group mb-3">
+                                                <label for="medication_code_{{ medication.id }}" class="form-label">Medication Code</label>
+                                                <input type="text" class="form-control" id="medication_code_{{ medication.id }}" name="medication_code" value="{{ medication.medication_code }}" required>
+                                            </div>
+
+                                            <!-- Medication Name -->
+                                            <div class="form-group mb-3">
+                                                <label for="medication_name_{{ medication.id }}" class="form-label">Medication Name</label>
+                                                <input type="text" class="form-control" id="medication_name_{{ medication.id }}" name="medication_name" value="{{ medication.medication_name }}" required>
+                                            </div>
+
+                                            <!-- Status -->
+                                            <div class="form-group mb-3">
+                                                <label for="status_{{ medication.id }}" class="form-label">Status</label>
+                                                <select class="form-control" id="status_{{ medication.id }}" name="status" required>
+                                                    {% for code, display in medicationform.status.choices %}
+                                                    <option value="{{ code }}" {% if medication.status == code %}selected{% endif %}>{{ display }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+
+                                            <!-- Start Date -->
+                                            <div class="form-group mb-3">
+                                                <label for="effectivePeriod_start_{{ medication.id }}" class="form-label">Start Date</label>
+                                                <input type="date" class="form-control" id="effectivePeriod_start_{{ medication.id }}" name="effectivePeriod_start" value="{{ medication.effectivePeriod_start }}" required>
+                                            </div>
+
+                                            <!-- End Date -->
+                                            <div class="form-group mb-3">
+                                                <label for="effectivePeriod_end_{{ medication.id }}" class="form-label">End Date</label>
+                                                <input type="date" class="form-control" id="effectivePeriod_end_{{ medication.id }}" name="effectivePeriod_end" value="{{ medication.effectivePeriod_end }}">
+                                            </div>
+
+                                            <!-- Date Asserted -->
+                                            <div class="form-group mb-3">
+                                                <label for="date_asserted_{{ medication.id }}" class="form-label">Date Asserted</label>
+                                                <input type="date" class="form-control" id="date_asserted_{{ medication.id }}" name="date_asserted" value="{{ medication.date_asserted }}">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <!-- Adherence -->
+                                            <div class="form-group mb-3">
+                                                <label for="adherence_{{ medication.id }}" class="form-label">Adherence</label>
+                                                <select class="form-control" id="adherence_{{ medication.id }}" name="adherence">
+                                                    {% for code, display in medicationform.adherence.choices %}
+                                                    <option value="{{ code }}" {% if medication.adherence == code %}selected{% endif %}>{{ display }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+
+                                            <!-- Reason Code -->
+                                            <div class="form-group mb-3">
+                                                <label for="reason_code_{{ medication.id }}" class="form-label">Reason Code</label>
+                                                <textarea class="form-control" id="reason_code_{{ medication.id }}" name="reason_code">{{ medication.reason_code }}</textarea>
+                                            </div>
+
+                                            <!-- Reason Reference -->
+                                            <div class="form-group mb-3">
+                                                <label for="reason_reference_{{ medication.id }}" class="form-label">Reason Reference</label>
+                                                <input type="text" class="form-control" id="reason_reference_{{ medication.id }}" name="reason_reference" value="{{ medication.reason_reference }}">
+                                            </div>
+
+                                            <!-- Status Reason -->
+                                            <div class="form-group mb-3">
+                                                <label for="status_reason_{{ medication.id }}" class="form-label">Status Reason</label>
+                                                <input type="text" class="form-control" id="status_reason_{{ medication.id }}" name="status_reason" value="{{ medication.status_reason }}">
+                                            </div>
+
+                                            <!-- Dosage Instruction -->
+                                            <div class="form-group mb-3">
+                                                <label for="dosage_instruction_{{ medication.id }}" class="form-label">Dosage Instruction</label>
+                                                <textarea class="form-control" id="dosage_instruction_{{ medication.id }}" name="dosage_instruction">{{ medication.dosage_instruction }}</textarea>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <!-- Information Source -->
+                                            <div class="form-group mb-3">
+                                                <label for="information_source_{{ medication.id }}" class="form-label">Information Source</label>
+                                                <input type="text" class="form-control" id="information_source_{{ medication.id }}" name="information_source" value="{{ medication.information_source }}">
+                                            </div>
+
+                                            <!-- Notes -->
+                                            <div class="form-group mb-3">
+                                                <label for="notes_{{ medication.id }}" class="form-label">Notes</label>
+                                                <textarea class="form-control" id="notes_{{ medication.id }}" name="notes">{{ medication.notes }}</textarea>
+                                            </div>
+
+                                            <!-- Category -->
+                                            <div class="form-group mb-3">
+                                                <label for="category_{{ medication.id }}" class="form-label">Category</label>
+                                                <select class="form-control" id="category_{{ medication.id }}" name="category">
+                                                    {% for code, display in medicationform.category.choices %}
+                                                    <option value="{{ code }}" {% if medication.category == code %}selected{% endif %}>{{ display }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+
+                                            <!-- Route of Administration -->
+                                            <div class="form-group mb-3">
+                                                <label for="route_of_administration_{{ medication.id }}" class="form-label">Route of Administration</label>
+                                                <input type="text" class="form-control" id="route_of_administration_{{ medication.id }}" name="route_of_administration" value="{{ medication.route_of_administration }}">
+                                            </div>
+
+                                            <!-- Timing -->
+                                            <div class="form-group mb-3">
+                                                <label for="timing_{{ medication.id }}" class="form-label">Timing</label>
+                                                <input type="text" class="form-control" id="timing_{{ medication.id }}" name="timing" value="{{ medication.timing }}">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+
+                <!-- Edit Allergy Modals -->
+                {% for allergy in allergies %}
+                <div class="modal fade" id="editAllergyModal{{ allergy.id }}" tabindex="-1" aria-labelledby="editAllergyModalLabel{{ allergy.id }}" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <form method="POST" action="{{ url_for('main.edit_allergy', patient_id=patient.id, allergy_id=allergy.id) }}">
+                                {{ allergyform.hidden_tag() }}
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="editAllergyModalLabel{{ allergy.id }}">Edit Allergy</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="row">
+                                        <!-- Substance -->
+                                        <div class="col-md-6">
+                                            <div class="form-group mb-3">
+                                                <label for="substance_{{ allergy.id }}" class="form-label">Substance</label>
+                                                <input type="text" class="form-control" id="substance_{{ allergy.id }}" name="substance" value="{{ allergy.substance }}" required>
+                                            </div>
+                                        </div>
+
+                                        <!-- Clinical Status -->
+                                        <div class="col-md-6">
+                                            <div class="form-group mb-3">
+                                                <label for="clinical_status_{{ allergy.id }}" class="form-label">Clinical Status</label>
+                                                <select class="form-control" id="clinical_status_{{ allergy.id }}" name="clinical_status" required>
+                                                    {% for code, display in allergyform.clinical_status.choices %}
+                                                    <option value="{{ code }}" {% if allergy.clinical_status == code %}selected{% endif %}>
+                                                        {{ display }}
+                                                    </option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <!-- Verification Status -->
+                                        <div class="col-md-6">
+                                            <div class="form-group mb-3">
+                                                <label for="verification_status_{{ allergy.id }}" class="form-label">Verification Status</label>
+                                                <select class="form-control" id="verification_status_{{ allergy.id }}" name="verification_status" required>
+                                                    {% for code, display in allergyform.verification_status.choices %}
+                                                    <option value="{{ code }}" {% if allergy.verification_status == code %}selected{% endif %}>
+                                                        {{ display }}
+                                                    </option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <!-- Severity -->
+                                        <div class="col-md-6">
+                                            <div class="form-group mb-3">
+                                                <label for="severity_{{ allergy.id }}" class="form-label">Severity</label>
+                                                <select class="form-control" id="severity_{{ allergy.id }}" name="severity" required>
+                                                    {% for code, display in allergyform.severity.choices %}
+                                                    <option value="{{ code }}" {% if allergy.severity == code %}selected{% endif %}>
+                                                        {{ display }}
+                                                    </option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <!-- Category -->
+                                        <div class="col-md-6">
+                                            <div class="form-group mb-3">
+                                                <label for="category_{{ allergy.id }}" class="form-label">Category</label>
+                                                <select class="form-control" id="category_{{ allergy.id }}" name="category" required>
+                                                    {% for code, display in allergyform.category.choices %}
+                                                    <option value="{{ code }}" {% if allergy.category == code %}selected{% endif %}>
+                                                        {{ display }}
+                                                    </option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <!-- Reaction -->
+                                        <div class="col-md-12">
+                                            <div class="form-group mb-3">
+                                                <label for="reaction_{{ allergy.id }}" class="form-label">Reaction</label>
+                                                <textarea class="form-control" id="reaction_{{ allergy.id }}" name="reaction">{{ allergy.reaction }}</textarea>
+                                            </div>
+                                        </div>
+
+                                        <!-- Onset (Immediate or Delayed) -->
+                                        <div class="col-md-6">
+                                            <div class="form-group mb-3">
+                                                <label for="onset_{{ allergy.id }}" class="form-label">Onset</label>
+                                                <select class="form-control" id="onset_{{ allergy.id }}" name="onset" required>
+                                                    <option value="immediate" {% if allergy.onset == 'immediate' %}selected{% endif %}>Immediate</option>
+                                                    <option value="delayed" {% if allergy.onset == 'delayed' %}selected{% endif %}>Delayed</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+
+
+
+                
+
+
+
+
+
+
             </div>
         </div>
     </div>

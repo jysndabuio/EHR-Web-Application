@@ -334,12 +334,63 @@ class Observation(UserMixin, db.Model):
 
     @staticmethod
     def get_code_options():
-        """Returns a list of possible code options (e.g., LOINC or SNOMED codes)."""
+        """Returns a list of possible code options (e.g., LOINC or SNOMED codes) for observations."""
         return [
-            {"code": "8462-4", "display": "Body Temperature"},
-            {"code": "8532-7", "display": "Blood Pressure"},
-            {"code": "10004-0", "display": "Heart Rate"}
+            # Laboratory Tests
+            {"code": "4548-4", "display": "Hemoglobin A1c (HbA1c)"},
+            {"code": "718-7", "display": "Hemoglobin"},
+            {"code": "6690-2", "display": "White Blood Cell Count"},
+            {"code": "789-8", "display": "Erythrocyte Sedimentation Rate (ESR)"},
+            {"code": "2345-7", "display": "Glucose, Blood"},
+            {"code": "6299-2", "display": "Cholesterol, Total"},
+            {"code": "2093-3", "display": "Low-Density Lipoprotein (LDL)"},
+            {"code": "2571-8", "display": "High-Density Lipoprotein (HDL)"},
+            {"code": "32354-0", "display": "Urea Nitrogen (BUN)"},
+            {"code": "2823-3", "display": "Potassium, Blood"},
+            {"code": "2710-2", "display": "Sodium, Blood"},
+            {"code": "2160-0", "display": "Creatinine, Blood"},
+            {"code": "2339-0", "display": "Glucose, Urine"},
+
+            # Imaging and Diagnostic Reports
+            {"code": "24627-2", "display": "Chest X-ray Report"},
+            {"code": "18748-4", "display": "CT Head Report"},
+            {"code": "72273-1", "display": "MRI Abdomen Report"},
+            {"code": "11502-2", "display": "Mammogram Report"},
+            {"code": "30746-8", "display": "Ultrasound Pelvis Report"},
+
+            # Infectious Disease and Microbiology
+            {"code": "94500-6", "display": "COVID-19 PCR Test"},
+            {"code": "22322-2", "display": "HIV Antibody Test"},
+            {"code": "20570-8", "display": "Hepatitis B Surface Antigen"},
+            {"code": "58413-6", "display": "Influenza Virus A RNA"},
+            {"code": "24111-1", "display": "Streptococcus Test"},
+
+            # Cancer Markers
+            {"code": "10834-0", "display": "Prostate-Specific Antigen (PSA)"},
+            {"code": "19295-5", "display": "CA-125 (Cancer Antigen 125)"},
+            {"code": "19825-1", "display": "Alpha-Fetoprotein (AFP)"},
+            {"code": "2101-1", "display": "Carcinoembryonic Antigen (CEA)"},
+
+            # Pregnancy and Fertility
+            {"code": "19080-1", "display": "Pregnancy Test"},
+            {"code": "14743-9", "display": "Gestational Age"},
+            {"code": "32458-4", "display": "Human Chorionic Gonadotropin (hCG), Serum"},
+            {"code": "34682-5", "display": "Progesterone, Serum"},
+
+            # Other Clinical Observations
+            {"code": "15074-8", "display": "Oxygen Saturation (SpO2)"},
+            {"code": "9278-3", "display": "Pain Score"},
+            {"code": "24841-1", "display": "Alcohol Level, Blood"},
+            {"code": "49541-6", "display": "Drug Screen, Urine"},
+            {"code": "40545-1", "display": "Mood Assessment"},
+            {"code": "75323-6", "display": "Cognitive Function Assessment"}
         ]
+    
+    @property
+    def code_description(self):
+        """Compute the code description dynamically."""
+        code_map = {item["code"]: item["display"] for item in Observation.get_code_options()}
+        return code_map.get(self.code, "Unknown Reason")
 
 
 # Updated AllergyIntolerance Model
@@ -356,7 +407,8 @@ class AllergyIntolerance(UserMixin, db.Model):
     type = db.Column(db.String(20), nullable=True)
     category = db.Column(db.String(50), nullable=True)
     reaction = db.Column(db.Text, nullable=True)
-    onset = db.Column(db.Date, nullable=True)
+    onset = db.Column(db.String(20), nullable=True)  # This field will store 'immediate' or 'delayed'
+
 
     # Relationships
     patient = relationship('Patient', back_populates='allergies')
@@ -394,7 +446,14 @@ class AllergyIntolerance(UserMixin, db.Model):
             {"code": "medication", "display": "Medication"},
             {"code": "environmental", "display": "Environmental"}
         ]
-
+    
+    @staticmethod
+    def get_onset_choices():
+        """Retrieve predefined onset choices for allergic reactions (immediate or delayed)."""
+        return [
+            {"code": "immediate", "display": "Immediate"},
+            {"code": "delayed", "display": "Delayed"}
+        ]
 
 # Updated MedicationStatement Model
 class MedicationStatement(UserMixin, db.Model):
