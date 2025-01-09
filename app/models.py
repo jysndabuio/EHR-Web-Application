@@ -28,6 +28,7 @@ class User(UserMixin, db.Model):
     ecd_contact_number = db.Column(db.String(50), nullable=True)
     created_at = db.Column(db.DateTime, default=db.func.now())
     profile_image = db.Column(db.String(255), nullable=True, default='image/default_profile.jpg')
+    has_submitted_survey = db.Column(db.Boolean, default=False)
 
     # Relationships
     education_records = relationship('UserEducation', back_populates='user', lazy=True)
@@ -35,6 +36,8 @@ class User(UserMixin, db.Model):
     appointments = relationship('Appointment', back_populates='doctor', lazy='dynamic')
     procedures = relationship('Procedure', back_populates='performer', lazy='dynamic') 
     visits = relationship('Visit', back_populates='doctor', lazy='dynamic')
+    medical_history = relationship('MedicalHistory', back_populates='doctor', lazy='dynamic')
+    
     def __repr__(self):
         return f'<User {self.username}>'
 
@@ -76,6 +79,21 @@ def set_user_id(mapper, connection, target):
     if not target.user_id:
         session = db.session
         target.user_id = User.generate_user_id(session)
+
+class SurveyResponse(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.String(50), db.ForeignKey('users.id'), nullable=False)
+    q1 = db.Column(db.Integer, nullable=False)
+    q2 = db.Column(db.Integer, nullable=False)
+    q3 = db.Column(db.Integer, nullable=False)
+    q4 = db.Column(db.Integer, nullable=False)
+    q5 = db.Column(db.Integer, nullable=False)
+    q6 = db.Column(db.Integer, nullable=False)
+    q7 = db.Column(db.Integer, nullable=False)
+    q8 = db.Column(db.Integer, nullable=False)
+    q9 = db.Column(db.Integer, nullable=False)
+    q10 = db.Column(db.Integer, nullable=False)
+    created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
 
 
 class UserEducation(UserMixin, db.Model):
@@ -285,10 +303,6 @@ class Visit(UserMixin, db.Model):
             {"code": "hospital_room_101", "display": "Hospital Room 101"}
         ]
 
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
-from sqlalchemy.orm import relationship
-from datetime import datetime
-
 class Observation(UserMixin, db.Model):
     __tablename__ = 'observation'
 
@@ -391,7 +405,6 @@ class Observation(UserMixin, db.Model):
         """Compute the code description dynamically."""
         code_map = {item["code"]: item["display"] for item in Observation.get_code_options()}
         return code_map.get(self.code, "Unknown Reason")
-
 
 # Updated AllergyIntolerance Model
 class AllergyIntolerance(UserMixin, db.Model):
@@ -732,17 +745,19 @@ class MedicalHistory(UserMixin, db.Model):
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     patient_id = db.Column(db.String(50), db.ForeignKey('patient_basic.id'), nullable=False)
-    visit_id = db.Column(db.Integer, db.ForeignKey('visits.id'), nullable=False)
-    clinical_status = db.Column(db.String(50), nullable=True)  # e.g., active, resolved, remission
-    verification_status = db.Column(db.String(50), nullable=True)  # e.g., confirmed, provisional
-    category = db.Column(db.String(50), nullable=True)  # e.g., problem-list-item, encounter-diagnosis
+    doctor_id = db.Column(db.String(50), db.ForeignKey('users.id'), nullable=False)
+    visit_id = db.Column(db.Integer, db.ForeignKey('visits.id'), nullable=True)
+    clinical_status = db.Column(db.String(50), nullable=False)  # e.g., active, resolved, remission
+    verification_status = db.Column(db.String(50), nullable=False)  # e.g., confirmed, provisional
+    category = db.Column(db.String(50), nullable=False)  # e.g., problem-list-item, encounter-diagnosis
     code = db.Column(db.String(100), nullable=True)  # Condition code (e.g., SNOMED-CT or ICD-10)
-    onset_date = db.Column(db.Date, nullable=True)  # When the condition started
-    abatement_date = db.Column(db.Date, nullable=True)  # When the condition ended (if resolved)
-    notes = db.Column(db.Text, nullable=True)
+    onset_date = db.Column(db.Date, nullable=False)  # When the condition started
+    abatement_date = db.Column(db.Date, nullable=False)  # When the condition ended (if resolved)
+    notes = db.Column(db.Text, nullable=False)
 
     # Relationships
     patient = relationship('Patient', back_populates='medical_history')
+    doctor = relationship('User', back_populates='medical_history')
     visit = relationship('Visit', back_populates='medical_histories', foreign_keys=[visit_id])
 
     @staticmethod
@@ -750,22 +765,41 @@ class MedicalHistory(UserMixin, db.Model):
         return [
             {"code": "active", "display": "Active"},
             {"code": "resolved", "display": "Resolved"},
-            {"code": "remission", "display": "Remission"}
+            {"code": "remission", "display": "Remission"},
+            {"code": "inactive", "display": "Inactive"},
+            {"code": "recurrence", "display": "Recurrence"},
+            {"code": "relapse", "display": "Relapse"}
         ]
-    
+
     @staticmethod
     def get_verification_status_options():
         return [
             {"code": "confirmed", "display": "Confirmed"},
             {"code": "provisional", "display": "Provisional"},
-            {"code": "differential", "display": "Differential"}
+            {"code": "differential", "display": "Differential"},
+            {"code": "refuted", "display": "Refuted"},
+            {"code": "entered-in-error", "display": "Entered in Error"}
         ]
-    
+
     @staticmethod
     def get_category_options():
         return [
             {"code": "problem-list-item", "display": "Problem List Item"},
-            {"code": "encounter-diagnosis", "display": "Encounter Diagnosis"}
+            {"code": "encounter-diagnosis", "display": "Encounter Diagnosis"},
+            {"code": "health-concern", "display": "Health Concern"},
+            {"code": "symptom", "display": "Symptom"},
+            {"code": "finding", "display": "Finding"},
+            {"code": "condition", "display": "Condition"}
+        ]
+
+    @staticmethod
+    def get_code_options():
+        return [
+            {"code": "SNOMED-CT", "display": "SNOMED-CT"},
+            {"code": "ICD-10", "display": "ICD-10"},
+            {"code": "ICD-9", "display": "ICD-9"},
+            {"code": "LOINC", "display": "LOINC"},
+            {"code": "CPT", "display": "CPT"}
         ]
 
 
@@ -854,9 +888,26 @@ class Vitals(UserMixin, db.Model):
     @staticmethod
     def get_unit_options():
         return [
-            {"code": "bpm", "display": "Beats per Minute"},
-            {"code": "mmhg", "display": "Millimeters of Mercury"},
-            {"code": "celsius", "display": "Celsius (°C)"},
-            {"code": "farenheit", "display": "Fahrenheit (°F)"}
+            {"code": "bpm", "display": "Beats per Minute", "applicable_to": ["heart-rate", "respiratory-rate"]},
+            {"code": "mmhg", "display": "Millimeters of Mercury", "applicable_to": ["blood-pressure"]},
+            {"code": "celsius", "display": "Celsius (°C)", "applicable_to": ["body-temperature"]},
+            {"code": "fahrenheit", "display": "Fahrenheit (°F)", "applicable_to": ["body-temperature"]},
+            {"code": "kg", "display": "Kilograms", "applicable_to": ["weight"]},
+            {"code": "cm", "display": "Centimeters", "applicable_to": ["height"]},
+            {"code": "m2", "display": "Square Meters", "applicable_to": ["bmi"]},
+            {"code": "%", "display": "Percentage", "applicable_to": ["oxygen-saturation"]}
+        ]
+    
+    @staticmethod
+    def get_code_options():
+        return [
+            {"code": "body-temperature", "display": "Body Temperature"},
+            {"code": "blood-pressure", "display": "Blood Pressure"},
+            {"code": "heart-rate", "display": "Heart Rate"},
+            {"code": "respiratory-rate", "display": "Respiratory Rate"},
+            {"code": "oxygen-saturation", "display": "Oxygen Saturation"},
+            {"code": "weight", "display": "Weight"},
+            {"code": "height", "display": "Height"},
+            {"code": "bmi", "display": "Body Mass Index (BMI)"}
         ]
 

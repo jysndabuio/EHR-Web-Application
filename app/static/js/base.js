@@ -11,3 +11,15 @@ updateTime(); // Initialize on page load
  $(document).ready(function() {
     $('[data-toggle="tooltip"]').tooltip();  // Activate tooltips
 });
+
+document.addEventListener("DOMContentLoaded", function () {
+    const hash = window.location.hash; // Get the fragment (e.g., #appointment)
+    if (hash) {
+        // Find the tab link corresponding to the fragment
+        const targetTab = document.querySelector(`.nav-link[href="${hash}"]`);
+        if (targetTab) {
+            const tab = new bootstrap.Tab(targetTab); // Use Bootstrap's Tab API to activate the tab
+            tab.show(); // Activate the tab programmatically
+        }
+    }
+});

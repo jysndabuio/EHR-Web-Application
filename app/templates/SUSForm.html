@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>System Usability Survey</h2>
+    <form method="POST" action="{{ url_for('main.survey', doctor_id=doctor_id) }}">
+        {{ form.hidden_tag() }}
+        
+        <!-- Loop through questions for simplicity -->
+        {% for question, label in [
+            (form.q1, "I think that I would like to use this system frequently."),
+            (form.q2, "I found the system unnecessarily complex."),
+            (form.q3, "I thought the system was easy to use."),
+            (form.q4, "I think that I would need assistance to use the system."),
+            (form.q5, "I found the various functions in the system well-integrated."),
+            (form.q6, "I thought there was too much inconsistency in the system."),
+            (form.q7, "I would imagine most people would learn to use the system quickly."),
+            (form.q8, "I found the system very cumbersome to use."),
+            (form.q9, "I felt very confident using the system."),
+            (form.q10, "I needed to learn a lot before I could use the system.")
+        ] %}
+        <div class="form-group mb-3">
+            <label>{{ loop.index }}. {{ label }}</label>
+            <div class="form-check">
+                {% for value, description in [
+                    (1, "Strongly Disagree"),
+                    (2, "Disagree"),
+                    (3, "Neutral"),
+                    (4, "Agree"),
+                    (5, "Strongly Agree")
+                ] %}
+                <input class="form-check-input" type="radio" name="{{ question.name }}" id="{{ question.name }}_{{ value }}" value="{{ value }}">
+                <label class="form-check-label" for="{{ question.name }}_{{ value }}">
+                    {{ description }}
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+
+        <button type="submit" class="btn btn-primary">Submit Survey</button>
+    </form>
+</div>
+{% endblock %}

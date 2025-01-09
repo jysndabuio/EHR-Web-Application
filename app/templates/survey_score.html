@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>Survey Submitted</h2>
+    <div class="alert alert-info">
+        <p>Thank you for submitting the survey!</p>
+        <p>Your SUS Score: <strong>{{ sus_score }}</strong></p>
+    </div>
+    <a href="{{ url_for('main.doctor_dashboard') }}" class="btn btn-primary">Back to Dashboard</a>
+</div>
+{% endblock %}

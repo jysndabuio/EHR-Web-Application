@@ -39,7 +39,6 @@
             <button class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#vitalsModal">Add Vitals</button>
             <button class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#allergyModal">Add Allergy</button>
             <button class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#medicalHistoryModal">Add Medical History</button>
-            <button class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#appointmentModal">Add Appointment</button>
             <button class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#procedureModal">Add Procedure</button>
             <button class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#observationModal">Add Observation</button>
         </div>
@@ -116,62 +115,58 @@
     <br>
 
     <!-- Medication  -->
-    <div class="table-responsive">
+    <div>
         <h3>Medication</h3>
-        <table class="table table-bordered table-striped outline-table table-hover">
-            <thead>
-                <tr>
-                    <th class="col-md-2">Medication Code</th>
-                    <th class="col-md-3">Medication Name</th>
-                    <th class="col-md-2">Status</th>
-                    <th class="col-md-2">Start Date</th>
-                    <th class="col-md-2">End Date</th>
-                    <th class="col-md-2">Date Asserted</th>
-                    <th class="col-md-2">Information Source</th>
-                    <th class="col-md-2">Adherence</th>
-                    <th class="col-md-2">Reason Code</th>
-                    <th class="col-md-2">Reason Reference</th>
-                    <th class="col-md-2">Status Reason</th>
-                    <th class="col-md-2">Dosage Instruction</th>
-                    <th class="col-md-2">Notes</th>
-                    <th class="col-md-2">Category</th>
-                    <th class="col-md-2">Route of Administration</th>
-                    <th class="col-md-2">Timing</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for medication in visit.medications[:10] %}  <!-- Limit to 10 items per page -->
-                <tr>
-                    <td>{{ medication.medication_code }}</td>
-                    <td>{{ medication.medication_name }}</td>
-                    <td>{{ medication.status }}</td>
-                    <td>{{ medication.effectivePeriod_start }}</td>
-                    <td>{{ medication.effectivePeriod_end }}</td>
-                    <td>{{ medication.date_asserted }}</td>
-                    <td>{{ medication.information_source }}</td>
-                    <td>{{ medication.adherence }}</td>
-                    <td>{{ medication.reason_code }}</td>
-                    <td>{{ medication.reason_reference }}</td>
-                    <td>{{ medication.status_reason }}</td>
-                    <td>{{ medication.dosage_instruction }}</td>
-                     <!-- Tooltip for the Notes column -->
-                    <td data-toggle="tooltip" title="{{ medication.notes }}">
-                        {{ medication.notes | truncate(20) }}  <!-- Show truncated notes text -->
-                    </td>
-                    <td>{{ medication.category }}</td>
-                    <td>{{ medication.route_of_administration }}</td>
-                    <td>{{ medication.timing }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped outline-table table-hover">
+                <thead>
+                    <tr>
+                        <th class="col-md-2">Medication Code</th>
+                        <th class="col-md-3">Medication Name</th>
+                        <th class="col-md-2">Status</th>
+                        <th class="col-md-2">Start Date</th>
+                        <th class="col-md-2">End Date</th>
+                        <th class="col-md-2">Date Asserted</th>
+                        <th class="col-md-2">Information Source</th>
+                        <th class="col-md-2">Adherence</th>
+                        <th class="col-md-2">Reason Code</th>
+                        <th class="col-md-2">Reason Reference</th>
+                        <th class="col-md-2">Status Reason</th>
+                        <th class="col-md-2">Dosage Instruction</th>
+                        <th class="col-md-2">Notes</th>
+                        <th class="col-md-2">Category</th>
+                        <th class="col-md-2">Route of Administration</th>
+                        <th class="col-md-2">Timing</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for medication in visit.medications[:10] %}  <!-- Limit to 10 items per page -->
+                    <tr>
+                        <td>{{ medication.medication_code }}</td>
+                        <td>{{ medication.medication_name }}</td>
+                        <td>{{ medication.status }}</td>
+                        <td>{{ medication.effectivePeriod_start }}</td>
+                        <td>{{ medication.effectivePeriod_end }}</td>
+                        <td>{{ medication.date_asserted }}</td>
+                        <td>{{ medication.information_source }}</td>
+                        <td>{{ medication.adherence }}</td>
+                        <td>{{ medication.reason_code }}</td>
+                        <td>{{ medication.reason_reference }}</td>
+                        <td>{{ medication.status_reason }}</td>
+                        <td>{{ medication.dosage_instruction }}</td>
+                        <!-- Tooltip for the Notes column -->
+                        <td data-toggle="tooltip" title="{{ medication.notes }}">
+                            {{ medication.notes | truncate(20) }}  <!-- Show truncated notes text -->
+                        </td>
+                        <td>{{ medication.category }}</td>
+                        <td>{{ medication.route_of_administration }}</td>
+                        <td>{{ medication.timing }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
-    <nav>
-        <ul class="pagination">
-            <li class="page-item"><a class="page-link" href="#">Previous</a></li>
-            <li class="page-item"><a class="page-link" href="#">Next</a></li>
-        </ul>
-    </nav>
     <br> 
     
     <!-- Allergy Table -->
@@ -206,51 +201,40 @@
     </div>
     <br>
 
-    <!-- Appointments -->
+    <!-- Vitals -->
+    {% if visit.vitals and visit.vitals|length > 0 %}
     <div class="table-responsive">
-        <h3>Appointments</h3> 
+        <h3>Vitals</h3>
         <table class="table table-bordered table-striped outline-table table-hover">
             <thead>
                 <tr>
-                    <th>Service Category</th>
-                    <th>Service Type</th>
-                    <th>Specialty</th>
-                    <th>Appointment Type</th>
-                    <th>Priority</th>
-                    <th>Reason</th>
-                    <th>Start Time</th>
-                    <th>End Time</th>
+                    <th>Code</th>
+                    <th>Value</th>
+                    <th>Unit</th>
+                    <th>Effective Date</th>
                     <th>Status</th>
                     <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
-                {% for appointment in visit.appointments %}
+                {% for vitals in visit.vitals %}
                 <tr>
-                    <td>{{ appointment.service_category }}</td>
-                    <td>{{ appointment.service_type }}</td>
-                    <td>{{ appointment.specialty }}</td>
-                    <td>{{ appointment.appointment_type }}</td>
-                    <td>{{ appointment.priority }}</td>
-                    <td>{{ appointment.reason_code }}</td>
-                    <td>{{ appointment.start }}</td>
-                    <td>{{ appointment.end }}</td>
-                    <td>{{ appointment.status }}</td>
+                    <td>{{ vitals.code }}</td>
+                    <td>{{ vitals.value }}</td>
+                    <td>{{ vitals.unit }}</td>
+                    <td>{{ vitals.effective_date }}</td>
+                    <td>{{ vitals.status }}</td>
                     <td>
-                        <!-- Edit Button -->
-                        <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#editAppointmentModal{{ appointment.id }}">Edit</button>
-                        <!-- Delete Button -->
-                        <form method="POST" action="{{ url_for('main.delete_appointment', appointment_id=appointment.id) }}" style="display:inline;">
-                            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this appointment?');">Delete</button>
-                        </form>
+                        <a href="#" data-bs-toggle="modal" data-bs-target="#editVitalModal{{ vitals.id }}" class="btn btn-warning btn-sm">Edit</a>
+                        <a href="{{ url_for('main.delete_vitals', visit_id=visit.id, vitals_id=vitals.id) }}" class="btn btn-danger btn-sm">Delete</a>
                     </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
-    <br>
-
+    {% endif %}
+    <br>  
 
     <!-- Modal list for each medical record fields -->
     <!-- Add Observation Modal -->
@@ -661,262 +645,166 @@
         </div>
     </div>
 
-    <!-- Add Appointment Modal -->
-    <div class="modal fade" id="appointmentModal" tabindex="-1" aria-labelledby="appointmentModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
+     <!-- Add Vitals Modal -->
+     <div class="modal fade" id="vitalsModal" tabindex="-1" aria-labelledby="vitalsModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
             <div class="modal-content">
-                <form method="POST" action="{{ url_for('main.add_appointment', visit_id=visit.id) }}">
-                    {{ appointmentform.hidden_tag() }}
+                <form method="POST" action="{{ url_for('main.add_vitals', visit_id=visit.id) }}">
+                    {{ vitalsform.hidden_tag() }}
                     <div class="modal-header">
-                        <h5 class="modal-title" id="appointmentModalLabel">Add Appointment</h5>
+                        <h5 class="modal-title" id="vitalsModalLabel">Add Vitals</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <!-- Start Time -->
-                                <div class="form-group mb-3">
-                                    <label for="start" class="form-label">Start Time</label>
-                                    <input type="datetime-local" class="form-control" id="start" name="start" required>
-                                </div>
-
-                                <!-- End Time -->
-                                <div class="form-group mb-3">
-                                    <label for="end" class="form-label">End Time</label>
-                                    <input type="datetime-local" class="form-control" id="end" name="end">
-                                </div>
-                                <!-- Service Category -->
-                                <div class="form-group mb-3">
-                                    <label for="service_category" class="form-label">Service Category</label>
-                                    <select class="form-control" id="service_category" name="service_category">
-                                        {% for code, display in appointmentform.service_category.choices %}
-                                        <option value="{{ code }}">{{ display }}</option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-
-                                <!-- Service Type -->
-                                <div class="form-group mb-3">
-                                    <label for="service_type" class="form-label">Service Type</label>
-                                    <select class="form-control" id="service_type" name="service_type">
-                                        {% for code, display in appointmentform.service_type.choices %}
-                                        <option value="{{ code }}">{{ display }}</option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-
-                                <!-- Specialty -->
-                                <div class="form-group mb-3">
-                                    <label for="specialty" class="form-label">Specialty</label>
-                                    <select class="form-control" id="specialty" name="specialty">
-                                        {% for code, display in appointmentform.specialty.choices %}
-                                        <option value="{{ code }}">{{ display }}</option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                                <!-- Appointment Type -->
-                                <div class="form-group mb-3">
-                                    <label for="appointment_type" class="form-label">Appointment Type</label>
-                                    <select class="form-control" id="appointment_type" name="appointment_type">
-                                        {% for code, display in appointmentform.appointment_type.choices %}
-                                        <option value="{{ code }}">{{ display }}</option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <!-- Priority -->
-                                <div class="form-group mb-3">
-                                    <label for="priority" class="form-label">Priority</label>
-                                    <select class="form-control" id="priority" name="priority">
-                                        {% for code, display in appointmentform.priority.choices %}
-                                        <option value="{{ code }}">{{ display }}</option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-
-                                <!-- Participant Actor -->
-                                <div class="form-group mb-3">
-                                    <label for="participant_actor" class="form-label">Participant Actor</label>
-                                    <select class="form-control" id="participant_actor" name="participant_actor">
-                                        {% for code, display in appointmentform.participant_actor.choices %}
-                                        <option value="{{ code }}">{{ display }}</option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-
-                                <!-- Participant Status -->
-                                <div class="form-group mb-3">
-                                    <label for="participant_status" class="form-label">Participant Status</label>
-                                    <select class="form-control" id="participant_status" name="participant_status">
-                                        {% for code, display in appointmentform.participant_status.choices %}
-                                        <option value="{{ code }}">{{ display }}</option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                                <!-- Reason Code -->
-                                <div class="form-group mb-3">
-                                    <label for="reason_code" class="form-label">Reason Code</label>
-                                    <select class="form-control" id="reason_code" name="reason_code">
-                                        {% for code, display in appointmentform.reason_code.choices %}
-                                        <option value="{{ code }}">{{ display }}</option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
                                 <!-- Status -->
                                 <div class="form-group mb-3">
                                     <label for="status" class="form-label">Status</label>
                                     <select class="form-control" id="status" name="status" required>
-                                        {% for code, display in appointmentform.status.choices %}
+                                        {% for code, display in vitalsform.status.choices %}
                                         <option value="{{ code }}">{{ display }}</option>
                                         {% endfor %}
                                     </select>
                                 </div>
-                            </div>
-                        </div>
+
+                                <!-- Category -->
+                                <div class="form-group mb-3">
+                                    <label for="category" class="form-label">Category</label>
+                                    <select class="form-control" id="category" name="category" required>
+                                        {% for code, display in vitalsform.category.choices %}
+                                        <option value="{{ code }}">{{ display }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <!-- Effective Date -->
+                                <div class="form-group mb-3">
+                                    <label for="effective_date" class="form-label">Effective Date</label>
+                                    <input type="date" class="form-control" id="effective_date" name="effective_date" required>
+                                </div>
+
+                                <!-- Code -->
+                                <div class="form-group mb-3">
+                                    <label for="code" class="form-label">Code</label>
+                                    <select class="form-control" id="code" name="code" required>
+                                        {% for code, display in vitalsform.code.choices %}
+                                        <option value="{{ code }}">{{ display }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <!-- Value -->
+                                <div class="form-group mb-3">
+                                    <label for="value" class="form-label">Observation Value</label>
+                                    <input type="text" class="form-control" id="value" name="value">
+                                </div>
+
+                                <!-- unit -->
+                                <div class="form-group mb-3">
+                                    <label for="unit" class="form-label">Unit</label>
+                                    <select class="form-control" id="unit" name="unit" required>
+                                        {% for code, display in vitalsform.unit.choices %}
+                                        <option value="{{ code }}">{{ display }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        <button type="submit" class="btn btn-primary">Add Appointment</button>
+                        <button type="submit" class="btn btn-primary">Add Allergy</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 
-
-
-    <!-- Edit Appointment Modals -->
-    {% for appointment in visit.appointments %}
-    <div class="modal fade" id="editAppointmentModal{{ appointment.id }}" tabindex="-1" aria-labelledby="editAppointmentModalLabel{{ appointment.id }}" aria-hidden="true">
+    <!-- Edit Vitals Modals -->
+    {% for vitals in visit.vitals %}
+    <div class="modal fade" id="editVitalModal{{ vitals.id }}" tabindex="-1" aria-labelledby="editVitalModalLabel{{ vitals.id }}" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
-                <form method="POST" action="{{ url_for('main.edit_appointment', patient_id=appointment.patient_id, appointment_id=appointment.id) }}">
-                    {{ appointmentform.hidden_tag() }}
+                <form method="POST" action="{{ url_for('main.edit_vitals', visit_id=visit.id, vitals_id=vitals.id) }}">
+                    {{ vitalsform.hidden_tag() }}
                     <div class="modal-header">
-                        <h5 class="modal-title" id="editAppointmentModalLabel{{ appointment.id }}">Edit Appointment</h5>
+                        <h5 class="modal-title" id="editVitalModalLabel{{ vitals.id }}">Edit Vitals</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
                         <div class="row">
+                            <!-- Status -->
                             <div class="col-md-6">
-                                <!-- Start Time -->
                                 <div class="form-group mb-3">
-                                    <div class="form-group mb-3">
-                                        <label for="start_{{ appointment.id }}" class="form-label">Start Time</label>
-                                        <input type="datetime-local" class="form-control" id="start_{{ appointment.id }}" name="start" value="{{ appointment.start.strftime('%Y-%m-%dT%H:%M') if appointment.start else '' }}" required>
-                                    </div>
-                                </div>
-
-                                <!-- End Time -->
-                                <div class="form-group mb-3">
-                                    <div class="form-group mb-3">
-                                        <label for="end_{{ appointment.id }}" class="form-label">End Time</label>
-                                        <input type="datetime-local" class="form-control" id="end_{{ appointment.id }}" name="end" value="{{ appointment.end.strftime('%Y-%m-%dT%H:%M') if appointment.end else '' }}">
-                                    </div>
-                                </div>
-                            
-                                <div class="form-group mb-3">
-                                    <label for="service_category_{{ appointment.id }}" class="form-label">Service Category</label>
-                                    <select class="form-control" id="service_category_{{ appointment.id }}" name="service_category">
-                                        {% for code, display in appointmentform.service_category.choices %}
-                                        <option value="{{ code }}" {% if appointment.service_category == code %}selected{% endif %}>
-                                            {{ display }}
-                                        </option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                           
-
-                                <div class="form-group mb-3">
-                                    <label for="service_type_{{ appointment.id }}" class="form-label">Service Type</label>
-                                    <select class="form-control" id="service_type_{{ appointment.id }}" name="service_type">
-                                        {% for code, display in appointmentform.service_type.choices %}
-                                        <option value="{{ code }}" {% if appointment.service_type == code %}selected{% endif %}>
-                                            {{ display }}
-                                        </option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                        
-
-                    
-                                <div class="form-group mb-3">
-                                    <label for="specialty_{{ appointment.id }}" class="form-label">Specialty</label>
-                                    <select class="form-control" id="specialty_{{ appointment.id }}" name="specialty">
-                                        {% for code, display in appointmentform.specialty.choices %}
-                                        <option value="{{ code }}" {% if appointment.specialty == code %}selected{% endif %}>
-                                            {{ display }}
-                                        </option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                           
-
-                                <div class="form-group mb-3">
-                                    <label for="appointment_type_{{ appointment.id }}" class="form-label">Appointment Type</label>
-                                    <select class="form-control" id="appointment_type_{{ appointment.id }}" name="appointment_type">
-                                        {% for code, display in appointmentform.appointment_type.choices %}
-                                        <option value="{{ code }}" {% if appointment.appointment_type == code %}selected{% endif %}>
-                                            {{ display }}
+                                    <label for="status_{{ vitals.id }}" class="form-label">Status</label>
+                                    <select class="form-control" id="status_{{ vitals.id }}" name="status" required>
+                                        {% for option in vitals.get_status_options() %}
+                                        <option value="{{ option.code }}" {% if vitals.status == option.code %}selected{% endif %}>
+                                            {{ option.display }}
                                         </option>
                                         {% endfor %}
                                     </select>
                                 </div>
                             </div>
+
+                            <!-- Category -->
                             <div class="col-md-6">
                                 <div class="form-group mb-3">
-                                    <label for="participant_actor_{{ appointment.id }}" class="form-label">Participant Actor</label>
-                                    <select class="form-control" id="participant_actor_{{ appointment.id }}" name="participant_actor">
-                                        {% for code, display in appointmentform.participant_actor.choices %}
-                                        <option value="{{ code }}" {% if appointment.participant_actor == code %}selected{% endif %}>
-                                            {{ display }}
-                                        </option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                                <div class="form-group mb-3">
-                                    <label for="priority_{{ appointment.id }}" class="form-label">Priority</label>
-                                    <select class="form-control" id="priority_{{ appointment.id }}" name="priority">
-                                        {% for code, display in appointmentform.priority.choices %}
-                                        <option value="{{ code }}" {% if appointment.priority == code %}selected{% endif %}>
-                                            {{ display }}
-                                        </option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                                <div class="form-group mb-3">
-                                    <label for="participant_status_{{ appointment.id }}" class="form-label">Participant Status</label>
-                                    <select class="form-control" id="participant_status_{{ appointment.id }}" name="participant_status">
-                                        {% for code, display in appointmentform.participant_status.choices %}
-                                        <option value="{{ code }}" {% if appointment.participant_status == code %}selected{% endif %}>
-                                            {{ display }}
-                                        </option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                                <div class="form-group mb-3">
-                                    <label for="reason_code_{{ appointment.id }}" class="form-label">Reason Code</label>
-                                    <select class="form-control" id="reason_code_{{ appointment.id }}" name="reason_code">
-                                        {% for code, display in appointmentform.reason_code.choices %}
-                                        <option value="{{ code }}" {% if appointment.reason_code == code %}selected{% endif %}>
-                                            {{ display }}
-                                        </option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                                <div class="form-group mb-3">
-                                    <label for="status_{{ appointment.id }}" class="form-label">Status</label>
-                                    <select class="form-control" id="status_{{ appointment.id }}" name="status" required>
-                                        {% for code, display in appointmentform.status.choices %}
-                                        <option value="{{ code }}" {% if appointment.status == code %}selected{% endif %}>
-                                            {{ display }}
+                                    <label for="category_{{ vitals.id }}" class="form-label">Category</label>
+                                    <select class="form-control" id="category_{{ vitals.id }}" name="category" required>
+                                        {% for option in vitals.get_category_options() %}
+                                        <option value="{{ option.code }}" {% if vitals.category == option.code %}selected{% endif %}>
+                                            {{ option.display }}
                                         </option>
                                         {% endfor %}
                                     </select>
                                 </div>
                             </div>
+
+                            <!-- Code -->
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="code_{{ vitals.id }}" class="form-label">Code</label>
+                                    <select class="form-control" id="code_{{ vitals.id }}" name="code" required>
+                                        {% for option in vitals.get_code_options() %}
+                                        <option value="{{ option.code }}" {% if vitals.code == option.code %}selected{% endif %}>
+                                            {{ option.display }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Effective Date -->
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="effective_date_{{ vitals.id }}" class="form-label">Effective Date</label>
+                                    <input type="datetime-local" class="form-control" id="effective_date_{{ vitals.id }}" name="effective_date" value="{{ vitals.effective_date.isoformat() if vitals.effective_date else '' }}"
+                                    required>
+                                </div>
+                            </div>
+
+                            <!-- Value -->
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="value_{{ vitals.id }}" class="form-label">Value</label>
+                                    <input type="text" class="form-control" id="value_{{ vitals.id }}" name="value" value="{{ vitals.value }}" required>
+                                </div>
+                            </div>
+
+                            <!-- Unit -->
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="unit_{{ vitals.id }}" class="form-label">Unit</label>
+                                    <select class="form-control" id="unit_{{ vitals.id }}" name="unit" required>
+                                        {% for option in vitals.get_unit_options() %}
+                                        <option value="{{ option.code }}" {% if vitals.unit == option.code %}selected{% endif %}>
+                                            {{ option.display }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+
                         </div>
+                    </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                         <button type="submit" class="btn btn-primary">Save Changes</button>
@@ -925,9 +813,6 @@
             </div>
         </div>
     </div>
-    {% endfor %}
-
-
-  
+    {% endfor %}  
 </div>
 {% endblock %}

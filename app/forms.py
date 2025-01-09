@@ -3,7 +3,7 @@ from flask_wtf import FlaskForm
 from wtforms import StringField,FormField,FieldList,DateTimeField,TextAreaField, DateField, PasswordField, SelectField, TelField, SubmitField, HiddenField, EmailField, IntegerField, RadioField
 from wtforms.validators import DataRequired, Email, EqualTo, Length, Regexp, NumberRange, Optional
 from datetime import date, datetime
-from .models import MedicationStatement, Observation, AllergyIntolerance, Vitals, Procedure,Appointment, MedicalHistory
+from .models import MedicationStatement, Observation, AllergyIntolerance, Vitals, Procedure,Appointment, MedicalHistory, Immunization
 
 class RegisterForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired(), Length(min=4, max=20)])
@@ -35,8 +35,6 @@ class RegisterForm(FlaskForm):
             EqualTo('password', message="Passwords must match")
     ])
     submit = SubmitField('Save Changes')
-
-
 
 class UserUpdateProfile(FlaskForm):
     username = StringField('Username', validators=[DataRequired(), Length(min=4, max=20)])
@@ -128,7 +126,6 @@ class MedicationStatementForm(FlaskForm):
         # Dynamically populate choices for category
         self.category.choices = [(adherence['code'], adherence['display']) for adherence in MedicationStatement.get_category_codes()]
 
-
 class VisitForm(FlaskForm):
     patient_id = HiddenField('Patient ID', validators=[DataRequired()])
     doctor_id = HiddenField('Doctor ID', validators=[DataRequired()])
@@ -136,7 +133,6 @@ class VisitForm(FlaskForm):
     visit_type = StringField('Visit Type', validators=[Optional(), Length(max=50)])
     medications = FieldList(FormField(MedicationStatementForm), min_entries=1, max_entries=10)
     notes = TextAreaField('Notes', validators=[Optional()])
-
 
 class ObservationForm(FlaskForm):
     visit_id = HiddenField('Visit ID', validators=[Optional()])
@@ -163,9 +159,6 @@ class ObservationForm(FlaskForm):
         # Dynamically populate choices for code
         self.code.choices = [(code['code'], code['display']) for code in Observation.get_code_options()]
 
-
-
-
 class ProcedureForm(FlaskForm):
     patient_id = StringField('Patient ID', validators=[DataRequired()])
     status = SelectField('Status', choices=[], validators=[DataRequired()])
@@ -186,7 +179,6 @@ class ProcedureForm(FlaskForm):
         self.outcome.choices = [(
             outcome['code'], outcome['display']) for outcome in Procedure.get_outcome_options()]
 
-
 class VitalsForm(FlaskForm):
     patient_id = StringField('Patient ID', validators=[DataRequired()])
     status = SelectField('Status', choices=[], validators=[DataRequired()])
@@ -199,12 +191,10 @@ class VitalsForm(FlaskForm):
 
     def __init__(self, *args, **kwargs):
         super(VitalsForm, self).__init__(*args, **kwargs)
-        self.status.choices = [(
-            status['code'], status['display']) for status in Vitals.get_status_options()]
-        self.category.choices = [(
-            category['code'], category['display']) for category in Vitals.get_category_options()]
-        self.unit.choices = [(
-            unit['code'], unit['display']) for unit in Vitals.get_unit_options()]
+        self.status.choices = [(status['code'], status['display']) for status in Vitals.get_status_options()]
+        self.category.choices = [(category['code'], category['display']) for category in Vitals.get_category_options()]
+        self.unit.choices = [(unit['code'], unit['display']) for unit in Vitals.get_unit_options()]
+        self.code.choices = [(unit['code'], unit['display']) for unit in Vitals.get_code_options()]
 
 class AllergyIntoleranceForm(FlaskForm):
     # Hidden fields for patient and visit IDs
@@ -232,10 +222,6 @@ class AllergyIntoleranceForm(FlaskForm):
         self.category.choices = [(category['code'], category['display']) for category in AllergyIntolerance.get_category_options()]
         self.onset.choices = [(onset['code'], onset['display']) for onset in AllergyIntolerance.get_onset_choices()]
 
-
-
-
-
 class ImmunizationForm(FlaskForm):
     visit_id = HiddenField('Visit ID', validators=[Optional()])
     patient_id = HiddenField('Patient ID', validators=[DataRequired()])
@@ -249,22 +235,26 @@ class ImmunizationForm(FlaskForm):
     manufacturer = StringField('Manufacturer', validators=[Optional(), Length(max=100)])
     notes = TextAreaField('Notes', validators=[Optional()])
 
-    # Dynamically set the choices for the vaccine_code, status, site, and route fields
-    #form.vaccine_code.choices = [(vaccine['code'], vaccine['display']) for vaccine in Immunization.get_vaccine_codes()]
-    #form.status.choices = [(status['code'], status['display']) for status in Immunization.get_status_codes()]
-    #form.site.choices = [(site['code'], site['display']) for site in Immunization.get_site_options()]
-    #form.route.choices = [(route['code'], route['display']) for route in Immunization.get_route_options()]
+    # Dynamically set the choices for the fields in the form constructor
+    def __init__(self, *args, **kwargs):
+        super(ImmunizationForm, self).__init__(*args, **kwargs)
+        
+        self.vaccine_code.choices = [(item["code"], item["display"]) for item in Immunization.get_vaccine_codes()]
+        self.status.choices = [(item["code"], item["display"]) for item in Immunization.get_status_codes()]
+        self.site.choices = [(item["code"], item["display"]) for item in Immunization.get_site_options()]
+        self.route.choices = [(item["code"], item["display"]) for item in Immunization.get_route_options()]
 
 
 class MedicalHistoryForm(FlaskForm):
-    patient_id = StringField('Patient ID', validators=[DataRequired()])
+    patient_id = HiddenField('Patient ID', validators=[DataRequired()])
+    visit_id = HiddenField('Visit ID', validators=[DataRequired()])
     clinical_status = SelectField('Clinical Status', choices=[], validators=[DataRequired()])
     verification_status = SelectField('Verification Status', choices=[], validators=[DataRequired()])
     category = SelectField('Category', choices=[], validators=[DataRequired()])
     code = StringField('Condition Code')
-    onset_date = DateField('Onset Date')
-    abatement_date = DateField('Abatement Date')
-    notes = TextAreaField('Notes')
+    onset_date = DateField('Onset Date', validators=[DataRequired()])
+    abatement_date = DateField('Abatement Date', validators=[DataRequired()])
+    notes = TextAreaField('Notes', validators=[DataRequired()])
     submit = SubmitField('Save')
 
     def __init__(self, *args, **kwargs):
@@ -275,6 +265,8 @@ class MedicalHistoryForm(FlaskForm):
             status['code'], status['display']) for status in MedicalHistory.get_verification_status_options()]
         self.category.choices = [(
             category['code'], category['display']) for category in MedicalHistory.get_category_options()]
+        self.code.choices = [(
+            category['code'], category['display']) for category in MedicalHistory.get_code_options()]
 
 class AppointmentForm(FlaskForm):
     id = HiddenField('Appointment ID', validators=[Optional()])
@@ -331,3 +323,36 @@ class AddVisitForm(FlaskForm):
     location = SelectField("Location", choices=[], validators=[Optional()])
     notes = TextAreaField("Notes", validators=[Optional(), Length(max=1000)])
     submit = SubmitField('Add Visit')
+
+class SurveyForm(FlaskForm):
+    q1 = RadioField('I think that I would like to use this system frequently.',
+                    choices=[('1', 'Strongly Disagree'), ('2', 'Disagree'), ('3', 'Neutral'), 
+                             ('4', 'Agree'), ('5', 'Strongly Agree')])
+    q2 = RadioField('I found the system unnecessarily complex.',
+                    choices=[('1', 'Strongly Disagree'), ('2', 'Disagree'), ('3', 'Neutral'), 
+                             ('4', 'Agree'), ('5', 'Strongly Agree')])
+    q3 = RadioField('I thought the system was easy to use.',
+                    choices=[('1', 'Strongly Disagree'), ('2', 'Disagree'), ('3', 'Neutral'), 
+                             ('4', 'Agree'), ('5', 'Strongly Agree')])
+    q4 = RadioField('I think that I would need the support of a technical person to be able to use this system.',
+                    choices=[('1', 'Strongly Disagree'), ('2', 'Disagree'), ('3', 'Neutral'), 
+                             ('4', 'Agree'), ('5', 'Strongly Agree')])
+    q5 = RadioField('I found the various functions in this system were well integrated.',
+                    choices=[('1', 'Strongly Disagree'), ('2', 'Disagree'), ('3', 'Neutral'), 
+                             ('4', 'Agree'), ('5', 'Strongly Agree')])
+    q6 = RadioField('I thought there was too much inconsistency in this system.',
+                    choices=[('1', 'Strongly Disagree'), ('2', 'Disagree'), ('3', 'Neutral'), 
+                             ('4', 'Agree'), ('5', 'Strongly Agree')])
+    q7 = RadioField('I would imagine that most people would learn to use this system very quickly.',
+                    choices=[('1', 'Strongly Disagree'), ('2', 'Disagree'), ('3', 'Neutral'), 
+                             ('4', 'Agree'), ('5', 'Strongly Agree')])
+    q8 = RadioField('I found the system very cumbersome to use.',
+                    choices=[('1', 'Strongly Disagree'), ('2', 'Disagree'), ('3', 'Neutral'), 
+                             ('4', 'Agree'), ('5', 'Strongly Agree')])
+    q9 = RadioField('I felt very confident using the system.',
+                    choices=[('1', 'Strongly Disagree'), ('2', 'Disagree'), ('3', 'Neutral'), 
+                             ('4', 'Agree'), ('5', 'Strongly Agree')])
+    q10 = RadioField('I needed to learn a lot of things before I could get going with this system.',
+                     choices=[('1', 'Strongly Disagree'), ('2', 'Disagree'), ('3', 'Neutral'), 
+                              ('4', 'Agree'), ('5', 'Strongly Agree')])
+    submit = SubmitField("Submit Survey")

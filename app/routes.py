@@ -2,8 +2,8 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from flask_login import login_user, logout_user, login_required, current_user
 from flask_mail import Message
 from datetime import datetime
-from .models import User, UserEducation, DoctorPatient, Patient, Visit, Appointment, Vitals, AllergyIntolerance, Observation,Immunization, Procedure,MedicalHistory, MedicationStatement
-from .forms import RegisterForm,MedicationStatementForm,AllergyIntoleranceForm, AddVisitForm, PatientForm, AppointmentForm, VisitForm, ObservationForm, PasswordResetForm, UserUpdateProfile, PatientUpdateForm, ImmunizationForm, ProcedureForm, VitalsForm, MedicalHistoryForm
+from .models import User, UserEducation, DoctorPatient, Patient, Visit, Appointment, SurveyResponse, Vitals, AllergyIntolerance, Observation,Immunization, Procedure,MedicalHistory, MedicationStatement
+from .forms import SurveyForm, RegisterForm,MedicationStatementForm,AllergyIntoleranceForm, AddVisitForm, PatientForm, AppointmentForm, VisitForm, ObservationForm, PasswordResetForm, UserUpdateProfile, PatientUpdateForm, ImmunizationForm, ProcedureForm, VitalsForm, MedicalHistoryForm
 from . import db, bcrypt, mail
 from .utils import verify_password_reset_token, generate_password_reset_token, allowed_file
 from .config import Config
@@ -178,7 +178,8 @@ def view_patient(patient_id):
         joinedload(Patient.medications),
         joinedload(Patient.observations),
         joinedload(Patient.vitals),
-        joinedload(Patient.procedures)
+        joinedload(Patient.procedures),
+        joinedload(Patient.medical_history)
     ).filter_by(id=patient_id).first_or_404()
 
     doctor_patient = DoctorPatient.query.filter_by(doctor_id=current_user.id, patient_id=patient_id).first()
@@ -205,14 +206,16 @@ def view_patient(patient_id):
     """
 
     # Initialize the immunization form with dynamic choices
-    immunizationform = ImmunizationForm(obj=patient.immunizations)
-    immunizationform.vaccine_code.choices = [(item["code"], item["display"]) for item in Immunization.get_vaccine_codes()]
-    immunizationform.status.choices = [(item["code"], item["display"]) for item in Immunization.get_status_codes()]
-    immunizationform.site.choices = [(item["code"], item["display"]) for item in Immunization.get_site_options()]
-    immunizationform.route.choices = [(item["code"], item["display"]) for item in Immunization.get_route_options()]
-    
+    #immunizationform = ImmunizationForm(obj=patient.immunizations)
+    #immunizationform.vaccine_code.choices = [(item["code"], item["display"]) for item in Immunization.get_vaccine_codes()]
+    #immunizationform.status.choices = [(item["code"], item["display"]) for item in Immunization.get_status_codes()]
+    #immunizationform.site.choices = [(item["code"], item["display"]) for item in Immunization.get_site_options()]
+    #immunizationform.route.choices = [(item["code"], item["display"]) for item in Immunization.get_route_options()]
+    immunizationform = ImmunizationForm()
     medicationform = MedicationStatementForm()
     allergyform = AllergyIntoleranceForm()
+    appointmentform=AppointmentForm()
+    medicalhistoryform = MedicalHistoryForm()
 
     return render_template(
         'view_patient.html', 
@@ -222,9 +225,12 @@ def view_patient(patient_id):
         immunizations=patient.immunizations,
         allergies=patient.allergies,
         medications=patient.medications,
+        medicalhistory=patient.medical_history, 
         immunizationform=immunizationform,
         medicationform = medicationform,
+        appointmentform = appointmentform,
         allergyform = allergyform,
+        medicalhistoryform=medicalhistoryform,
         show_return_button=True, 
         return_url=request.referrer
     )
@@ -262,15 +268,11 @@ def view_visit(visit_id):
 
     # Initialize the immunization form with dynamic choices
     immunizationform = ImmunizationForm()
-    immunizationform.vaccine_code.choices = [(item["code"], item["display"]) for item in Immunization.get_vaccine_codes()]
-    immunizationform.status.choices = [(item["code"], item["display"]) for item in Immunization.get_status_codes()]
-    immunizationform.site.choices = [(item["code"], item["display"]) for item in Immunization.get_site_options()]
-    immunizationform.route.choices = [(item["code"], item["display"]) for item in Immunization.get_route_options()]
-
     medicationform=MedicationStatementForm()
     observationform = ObservationForm()
     allergyform = AllergyIntoleranceForm()
     appointmentform = AppointmentForm()
+    vitalsform = VitalsForm()
 
     return render_template('view_visit.html', 
                            visit=visit,
@@ -279,6 +281,7 @@ def view_visit(visit_id):
                            observationform=observationform,
                            allergyform = allergyform,
                            appointmentform = appointmentform,
+                           vitalsform = vitalsform,
                            show_return_button=True, 
                             return_url=request.referrer)
 
@@ -288,6 +291,7 @@ def view_appointments():
     # Get the current datetime to filter future appointments
     now = datetime.now()
 
+    patient = Patient.query.filter_by(id=current_user.id).all()
     # Query all appointments for the current doctor and use joinedload to load the patient data
     all_appointments = Appointment.query.filter_by(doctor_id=current_user.id).options(joinedload(Appointment.patient)).all()
     
@@ -298,9 +302,7 @@ def view_appointments():
     sorted_appointments = sorted(upcoming_appointments, key=lambda x: x.start)
 
     # Return the rendered template with the list of appointments
-    return render_template('view_appointments.html', appointments=sorted_appointments)
-
-
+    return render_template('view_appointments.html', appointments=sorted_appointments, patient=patient)
 
 
 
@@ -566,7 +568,6 @@ def add_allergy(visit_id):
         patient=visit_id,
     )
 
-
 @bp.route('/patient/<int:visit_id>/add_observation', methods=['POST', 'GET'])
 @login_required
 def add_observation(visit_id):
@@ -616,18 +617,68 @@ def add_observation(visit_id):
         patient_id=visit.patient.id
     )
 
-@bp.route('/patient/<int:visit_id>/add_appointment', methods=['POST', 'GET'])
+@bp.route('/patient/<int:visit_id>/add_vitals', methods=['POST', 'GET'])
 @login_required
-def add_appointment(visit_id):
+def add_vitals(visit_id):
+    if current_user.role != 'doctor':
+        flash('Access unauthorized.', 'danger')
+        return redirect(url_for('main.login'))
+    
+    # Load the visit object
+    visit = Visit.query.get_or_404(visit_id)
+    
+    # Ensure the doctor has access to this visit's patient
+    doctor_patient = DoctorPatient.query.filter_by(doctor_id=current_user.id, patient_id=visit.patient_id).first()
+    if not doctor_patient:
+        flash('You do not have permission to add observations for this patient.', 'danger')
+        return redirect(url_for('main.doctor_dashboard'))
+
+    if request.method == 'POST':
+        # Collect data from the form
+        status = request.form.get('status')  
+        category = request.form.get('category', "vital-signs")  
+        code = request.form.get('code')  
+        effective_date = request.form.get('effective_date')  # Date/Time the observation was recorded
+        value = request.form.get('value')  
+        unit = request.form.get('unit')  
+        
+        # Create a new Vitals instance
+        vitals = Vitals(
+            patient_id=visit.patient.id,
+            visit_id=visit.id,
+            code=code,
+            value=value,
+            status=status,
+            category=category,
+            effective_date=effective_date,
+        )
+
+        # Save to database
+        db.session.add(vitals)
+        db.session.commit()
+
+        flash('Vitals added successfully.', 'success')
+        return redirect(url_for('main.view_visit', visit_id=visit.id))
+
+    # Pass the visit object and the form to the template
+    return render_template(
+        'view_visit.html',
+        visit_id=visit.id,
+        patient_id=visit.patient.id
+    )
+
+@bp.route('/patient/<string:patient_id>/add_appointment', methods=['POST', 'GET'])
+@login_required
+def add_appointment(patient_id):
     if current_user.role != 'doctor':
         flash('Access unauthorized.', 'danger')
         return redirect(url_for('main.login'))
 
     # Load the visit object
-    visit = Visit.query.get_or_404(visit_id)
+    patient  = Patient.query.get_or_404(patient_id)
 
     # Ensure the doctor has access to this visit's patient
-    doctor_patient = DoctorPatient.query.filter_by(doctor_id=current_user.id, patient_id=visit.patient_id).first()
+    doctor_patient = DoctorPatient.query.filter_by(doctor_id=current_user.id, patient_id=patient_id).first()
     if not doctor_patient:
         flash('You do not have permission to add appointments for this patient.', 'danger')
         return redirect(url_for('main.doctor_dashboard'))
@@ -648,8 +699,7 @@ def add_appointment(visit_id):
 
         # Create a new appointment instance
         appointment = Appointment(
-            patient_id=visit.patient.id,  # Taken from visit.patient.id
-            visit_id=visit.id,
+            patient_id=patient.id,  # Taken from visit.patient.id
             doctor_id=current_user.id,  # Taken from current_user.id
             start=start,
             end=end,
@@ -669,13 +719,66 @@ def add_appointment(visit_id):
         db.session.commit()
 
         flash('Appointment added successfully.', 'success')
-        return redirect(url_for('main.view_visit', visit_id=visit.id))
+        return redirect(url_for('main.view_patient', patient_id=patient.id))
 
     # Pass the visit and form to the template
     return render_template(
         'add_appointment.html',
-        visit=visit,
+        patient=patient,
     )
+
+@bp.route('/patient/<string:patient_id>/add_medical_history', methods=['POST', 'GET'])
+@login_required
+def add_medical_history(patient_id):
+    if current_user.role != 'doctor':
+        flash('Access unauthorized.', 'danger')
+        return redirect(url_for('main.login'))
+
+    # Load the patient object
+    patient  = Patient.query.get_or_404(patient_id)
+
+    # Ensure the doctor has access to this visit's patient
+    doctor_patient = DoctorPatient.query.filter_by(doctor_id=current_user.id, patient_id=patient_id).first()
+    if not doctor_patient:
+        flash('You do not have permission to add medical history for this patient.', 'danger')
+        return redirect(url_for('main.doctor_dashboard'))
+
+    if request.method == 'POST':
+        # Collect data from the form
+        clinical_status = request.form.get('clinical_status')
+        verification_status = request.form.get('verification_status')
+        category = request.form.get('category')
+        code = request.form.get('code')
+        onset_date = request.form.get('onset_date')
+        abatement_date = request.form.get('abatement_date')
+        notes = request.form.get('notes')
+
+        # Create a new appointment instance
+        medicalhistory = MedicalHistory(
+            patient_id=patient.id,  # Taken from visit.patient.id
+            doctor_id=current_user.id,  # Taken from current_user.id
+            clinical_status=clinical_status,
+            verification_status=verification_status,
+            category=category,
+            code=code,
+            onset_date=onset_date,
+            abatement_date=abatement_date,
+            notes=notes
+        )
+
+        # Save to database
+        db.session.add(medicalhistory)
+        db.session.commit()
+
+        flash('Medication History added successfully.', 'success')
+        return redirect(url_for('main.view_patient', patient_id=patient.id))
+
+    # Pass the visit and form to the template
+    return render_template(
+        'add_appointment.html',
+        patient=patient,
+    )
+
 
 
 
@@ -757,6 +860,51 @@ def edit_visit(visit_id):
                            visit=visit,
                            show_return_button=True, 
                             return_url=request.referrer)
+
+@bp.route('/visit/<int:visit_id>/edit_vitals/<int:vitals_id>', methods=['GET', 'POST'])
+@login_required
+def edit_vitals(visit_id, vitals_id):
+    if current_user.role != 'doctor':
+        flash('Access unauthorized.', 'danger')
+        return redirect(url_for('login'))
+    
+    # Check if the patient is associated with the doctor
+    vitals = Vitals.query.get_or_404(vitals_id)
+    
+    patient_id = vitals.patient_id
+    doctor_patient = DoctorPatient.query.filter_by(doctor_id=current_user.id, patient_id=vitals.patient_id).first()
+    if not doctor_patient:
+        flash('You do not have permission to view this patient.', 'danger')
+        return redirect(url_for('main.doctor_dashboard'))
+
+    # Initialize the ObservationForm with the existing observation data
+    vitals_form = VitalsForm(obj=vitals)
+    
+    if request.method == 'POST':
+        # Collect data from the form
+        status = request.form.get('status')  
+        category = request.form.get('category', "vital-signs")  
+        code = request.form.get('code')  
+        effective_date = request.form.get('effective_date')  # Date/Time the observation was recorded
+        value = request.form.get('value')  
+        unit = request.form.get('unit')  
+
+        # Update the observation with new data
+        vitals.code = code
+        vitals.value = value
+        vitals.status = status
+        vitals.category = category
+        vitals.effective_date = effective_date
+        vitals.unit = unit
+        
+        # Commit the changes to the database
+        db.session.commit()
+
+        flash('Vitals updated successfully.', 'success')
+        return redirect(url_for('main.view_visit', visit_id=visit_id))
+    
+    # Render the form with existing observation data
+    return redirect(url_for('main.view_visit', visit_id=visit_id))
 
 @bp.route('/doctor/patient/<string:patient_id>/edit_observation/<int:observation_id>', methods=['GET', 'POST'])
 @login_required
@@ -973,6 +1121,49 @@ def edit_appointment(patient_id, appointment_id):
         appointmentform=appointmentform,
         patient=patient,
         appointment=appointment,
+    )
+
+@bp.route('/doctor/patient/<string:patient_id>/edit_medical_history/<int:medical_history_id>', methods=['GET', 'POST'])
+@login_required
+def edit_medical_history(patient_id, medical_history_id):
+    if current_user.role != 'doctor':
+        flash('Access unauthorized.', 'danger')
+        return redirect(url_for('login'))
+
+    # Check if the patient is associated with the doctor
+    patient = Patient.query.get_or_404(patient_id)
+    doctor_patient = DoctorPatient.query.filter_by(doctor_id=current_user.id, patient_id=patient_id).first()
+    if not doctor_patient:
+        flash('You do not have permission to view this patient.', 'danger')
+        return redirect(url_for('main.doctor_dashboard'))
+
+    # Fetch the appointment object
+    medical_history = MedicalHistory.query.get_or_404(medical_history_id)
+
+    # Pre-populate the form with existing appointment data
+    editmedicalhistoryform = AppointmentForm(obj=medical_history)
+
+    if request.method == 'POST':
+        # Update data from the form
+        medical_history.clinical_status = request.form.get('clinical_status')
+        medical_history.verification_status = request.form.get('verification_status')
+        medical_history.category = request.form.get('category')
+        medical_history.code = request.form.get('code')
+        medical_history.onset_date = request.form.get('onset_date')
+        medical_history.abatement_date = request.form.get('abatement_date')
+        medical_history.notes = request.form.get('notes')
+
+
+        # Commit changes to the database
+        db.session.commit()
+        flash('Medical History updated successfully.', 'success')
+        return redirect(url_for('main.view_patient', patient_id=patient.id))
+
+    return render_template(
+        'edit_appointment.html',
+        editmedicalhistoryform=editmedicalhistoryform,
+        patient=patient,
+        medical_history=medical_history,
     )
 
 
@@ -1195,6 +1386,44 @@ def delete_allergy(allergy_id):
     # Redirect back to the patient's details page
     return redirect(url_for('main.view_patient', patient_id=allergy.patient_id))
 
+@bp.route('/visit/<int:visit_id>/delete/<int:vitals_id>', methods=['POST'])
+@login_required
+def delete_vitals(vitals_id):
+    # Fetch the allergy record or return a 404 if not found
+    vitals = Vitals.query.get_or_404(vitals_id)
+    visit = vitals.visit  # Assuming the `visit` relationship is set up correctly
+
+    # Ensure the user has the appropriate permissions
+    if not current_user.role == 'doctor':
+        flash('Access unauthorized.', 'danger')
+        return redirect(url_for('main.doctor_dashboard'))
+
+    # Delete the allergy record
+    db.session.delete(vitals)
+    db.session.commit()
+
+    # Check if the associated visit contains any other medical records
+    if (
+        not visit.immunizations  # No immunizations left
+        and not visit.vitals  # No vitals left
+        and not visit.observations  # No observations left
+        and not visit.procedures  # No procedures left
+        and not visit.medications  # No medications left
+        and not visit.immunizations  # No allergies left
+        and not visit.medical_histories  # No medical histories left
+        and not visit.appointments  # No appointments left
+    ):
+        # If no related records are left, delete the visit
+        db.session.delete(visit)
+        db.session.commit()
+
+        flash('Allergy and associated visit deleted successfully.', 'success')
+    else:
+        flash('Allergy deleted successfully.', 'success')
+
+    # Redirect back to the patient's details page
+    return redirect(url_for('main.view_patient', patient_id=vitals.patient_id))
+
 @bp.route('/appointment/<int:appointment_id>/delete', methods=['POST'])
 @login_required
 def delete_appointment(appointment_id):
@@ -1234,17 +1463,97 @@ def delete_appointment(appointment_id):
     return redirect(url_for('main.view_patient', patient_id=appointment.patient_id))
 
 
+@bp.route('/patient/<string:patient_id>/delete_medical_history/<int:medicalhistory_id>', methods=['POST'])
+@login_required
+def delete_medical_history(patient_id, medicalhistory_id):
+    if current_user.role != 'doctor':
+        flash('Access unauthorized.', 'danger')
+        return redirect(url_for('login'))
 
+    patient = Patient.query.get_or_404(patient_id)
+    medical_history = MedicalHistory.query.get_or_404(medicalhistory_id)
 
+    # Check if the doctor is associated with the patient
+    doctor_patient = DoctorPatient.query.filter_by(doctor_id=current_user.id, patient_id=patient.id).first()
+    if not doctor_patient:
+        flash('You do not have permission to delete this patient.', 'danger')
+        return redirect(url_for('main.doctor_dashboard'))
+    
+    # Verify the name input
+    entered_name = request.form.get('patient_name', '').strip()
+    expected_name = f"{patient.firstname} {patient.lastname}"
 
+    # Case insensitive comparison to ensure exact match
+    if entered_name.lower() != expected_name.lower():
+        flash('Patient name does not match. Deletion aborted.', 'danger')
+        return redirect(url_for('main.doctor_patients'))
 
+    # Delete the patient
+    db.session.delete(medical_history)
+    db.session.commit()
+    flash('Patient deleted successfully.', 'success')
+    return redirect(url_for('main.doctor_dashboard'))
 
+@bp.route('/doctor/<string:doctor_id>/survey', methods=['GET', 'POST'])
+@login_required
+def survey(doctor_id):
+    doctor = User.query.filter_by(id=doctor_id).first()
+    if not doctor:
+        flash("Doctor not found.", "error")
+        return redirect(url_for('main.doctor_dashboard'))
 
+    # Check if the survey has already been submitted
+    previous_response = SurveyResponse.query.filter_by(user_id=current_user.id).first()
+    if previous_response:
+        # Calculate the SUS score based on the previous response
+        responses = [
+            previous_response.q1, previous_response.q2, previous_response.q3,
+            previous_response.q4, previous_response.q5, previous_response.q6,
+            previous_response.q7, previous_response.q8, previous_response.q9,
+            previous_response.q10
+        ]
+        odd_sum = sum(responses[i - 1] - 1 for i in [1, 3, 5, 7, 9])  # Odd questions: subtract 1
+        even_sum = sum(5 - responses[i - 1] for i in [2, 4, 6, 8, 10])  # Even questions: subtract from 5
+        sus_score = (odd_sum + even_sum) * 2.5
 
+        # Render the score display template
+        return render_template('survey_score.html', sus_score=sus_score)
 
+    # If no previous response, show the survey form
+    form = SurveyForm()
+    if form.validate_on_submit():
+        # Convert survey responses to integers for scoring
+        responses = [int(form.q1.data), int(form.q2.data), int(form.q3.data), int(form.q4.data),
+                     int(form.q5.data), int(form.q6.data), int(form.q7.data), int(form.q8.data),
+                     int(form.q9.data), int(form.q10.data)]
 
+        # Calculate SUS Score
+        odd_sum = sum(responses[i - 1] - 1 for i in [1, 3, 5, 7, 9])  # Odd questions: subtract 1
+        even_sum = sum(5 - responses[i - 1] for i in [2, 4, 6, 8, 10])  # Even questions: subtract from 5
+        sus_score = (odd_sum + even_sum) * 2.5
 
+        # Save responses to the database
+        response = SurveyResponse(
+            user_id=current_user.id,
+            q1=responses[0],
+            q2=responses[1],
+            q3=responses[2],
+            q4=responses[3],
+            q5=responses[4],
+            q6=responses[5],
+            q7=responses[6],
+            q8=responses[7],
+            q9=responses[8],
+            q10=responses[9]
+        )
+        db.session.add(response)
+        current_user.has_submitted_survey = True
+        db.session.commit()
 
+        flash(f"Thank you for your feedback! Your SUS score is {sus_score:.2f}.", "success")
+        return redirect(url_for('main.doctor_dashboard'))
+
+    return render_template('SUSForm.html', form=form)
 
 @bp.route('/account', methods=['GET', 'POST'])
 @login_required
