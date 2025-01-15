@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="mt-5 w-100">
+    <h2>View Lab Scans</h2>
+    <div class="card mb-3">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">{{ group.group_name }}</h5>       
+        </div>        
+        <div class="card-body">
+            <!-- Scan Upload Form -->
+            <h5>Upload Lab Scan</h5>
+            <form method="POST" action="{{ url_for('main.upload_lab_scan', patient_id=patient.id, group_id=group.id) }}" enctype="multipart/form-data">
+                <div class="mb-3">
+                    <label for="labScanFile" class="form-label">Choose Scan File</label>
+                    <input type="file" class="form-control" id="scan_file" name="scan_file" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Upload Scan</button>
+            </form>
+
+            <hr class="my-4">
+
+            <!-- Display Scans in the Folder -->
+            <h5>Scans in this Folder</h5>
+            <div class="row">
+                {% for scan in scans %}
+                <div class="col-md-4">
+                    <p><strong>{{ scan.filename }}</strong></p>
+                    <p><em>Uploaded on:</em> {{ scan.upload_date }}</p>
+                    <!-- Thumbnail image -->
+                    <a href="#" data-bs-toggle="modal" data-bs-target="#scanModal{{ scan.id }}">
+                        <img src="{{ url_for('main.view_scan', scan_id=scan.id) }}" alt="Scan" class="img-fluid rounded mb-2" style="width: 100%; height: auto; max-width: 200px;">
+                    </a>
+                    <!-- Modal for enlarging image -->
+                    <div class="modal fade" id="scanModal{{ scan.id }}" tabindex="-1" aria-labelledby="scanModalLabel{{ scan.id }}" aria-hidden="true">
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="scanModalLabel{{ scan.id }}">{{ scan.filename }}</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <img src="{{ url_for('main.view_scan', scan_id=scan.id) }}" alt="Scan" class="img-fluid">
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                    <a href="{{ url_for('main.view_scan', scan_id=scan.id) }}" class="btn btn-primary" target="_blank">Download</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Delete Scan Form -->
+                    <form method="POST" action="{{ url_for('main.delete_lab_scan', patient_id=patient.id, scan_id=scan.id) }}" class="mt-2">
+                        <button type="submit" class="btn btn-danger btn-sm">Delete Scan</button>
+                    </form>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

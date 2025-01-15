@@ -13,7 +13,6 @@
                 <th>Priority</th>
                 <th>Status</th>
                 <th>View Details</th>
-                <th>Link Visit</th>  <!-- New column for linking visit -->
             </tr>
         </thead>
         <tbody>
@@ -27,14 +26,6 @@
                 <td>{{ appointment.status }}</td>
                 <td>
                     <a href="{{ url_for('main.view_patient', patient_id=appointment.patient.id) }}#appointment" class="btn btn-info btn-sm">View Details</a>
-                </td>
-                <td>
-                    <!-- Button to link a visit to this appointment (if no visit exists) -->
-                    {% if not appointment.visit_id %}
-                    <a href="{{ url_for('main.link_visit', appointment_id=appointment.id) }}" class="btn btn-success btn-sm">Link Visit</a>
-                    {% else %}
-                    <span class="text-muted">Visit Linked</span>
-                    {% endif %}
                 </td>
             </tr>
             {% endfor %}

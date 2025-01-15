@@ -176,3 +176,19 @@ html:not(.dark-style) .account-settings-links .list-group-item.active {
     background-color: #343a40; /* Dark gray background */
     color: #f8f9fa; /* Light text color to make it readable */
 }
+
+/* Ensure the table cells with radio buttons are centered */
+table.table td {
+    vertical-align: middle;   /* Vertically center the content */
+}
+
+/* Ensure the radio buttons are centered horizontally in the cell */
+.form-check {
+    text-align: center;       /* Horizontally center the radio buttons */
+}
+
+/* If needed, ensure the radio button is centered within its form */
+.form-check-input {
+    margin: 0 auto;
+    display: block;
+}

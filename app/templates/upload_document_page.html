@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-5">
+    <h2>Upload Document</h2>
+    <form method="POST" action="{{ url_for('main.upload_document_page', patient_id=patient_id) }}" enctype="multipart/form-data">
+        {{ form.hidden_tag() }}
+        <div class="mb-3">
+            <label for="documentName" class="form-label">Document Name</label>
+            {{ form.document_name(class="form-control") }}
+        </div>
+        <div class="mb-3">
+            <label for="documentFile" class="form-label">Select File</label>
+            {{ form.document_file(class="form-control") }}
+        </div>
+        <div class="d-flex justify-content-between">
+            <a href="{{ url_for('main.view_patient', patient_id=patient_id) }}" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary">Upload</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

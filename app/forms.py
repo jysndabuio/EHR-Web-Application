@@ -1,9 +1,10 @@
 # forms.py
 from flask_wtf import FlaskForm
-from wtforms import StringField,FormField,FieldList,DateTimeField,TextAreaField, DateField, PasswordField, SelectField, TelField, SubmitField, HiddenField, EmailField, IntegerField, RadioField
-from wtforms.validators import DataRequired, Email, EqualTo, Length, Regexp, NumberRange, Optional
+from wtforms import StringField,FormField,FileField, FieldList,DateTimeField,TextAreaField, DateField, PasswordField, SelectField, TelField, SubmitField, HiddenField, EmailField, IntegerField, RadioField
+from wtforms.validators import DataRequired, Email, EqualTo, Length, Regexp, NumberRange, Optional, ValidationError
 from datetime import date, datetime
-from .models import MedicationStatement, Observation, AllergyIntolerance, Vitals, Procedure,Appointment, MedicalHistory, Immunization
+from .models import MedicationStatement, Observation, AllergyIntolerance, Vitals, Procedure,Appointment, MedicalHistory, Immunization, User, Visit
+from flask_wtf.file import FileAllowed, FileRequired
 
 class RegisterForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired(), Length(min=4, max=20)])
@@ -194,7 +195,7 @@ class VitalsForm(FlaskForm):
         self.status.choices = [(status['code'], status['display']) for status in Vitals.get_status_options()]
         self.category.choices = [(category['code'], category['display']) for category in Vitals.get_category_options()]
         self.unit.choices = [(unit['code'], unit['display']) for unit in Vitals.get_unit_options()]
-        self.code.choices = [(unit['code'], unit['display']) for unit in Vitals.get_code_options()]
+        self.code.choices = [(code['code'], code['display']) for code in Vitals.get_code_options()]
 
 class AllergyIntoleranceForm(FlaskForm):
     # Hidden fields for patient and visit IDs
@@ -243,7 +244,6 @@ class ImmunizationForm(FlaskForm):
         self.status.choices = [(item["code"], item["display"]) for item in Immunization.get_status_codes()]
         self.site.choices = [(item["code"], item["display"]) for item in Immunization.get_site_options()]
         self.route.choices = [(item["code"], item["display"]) for item in Immunization.get_route_options()]
-
 
 class MedicalHistoryForm(FlaskForm):
     patient_id = HiddenField('Patient ID', validators=[DataRequired()])
@@ -324,6 +324,17 @@ class AddVisitForm(FlaskForm):
     notes = TextAreaField("Notes", validators=[Optional(), Length(max=1000)])
     submit = SubmitField('Add Visit')
 
+    # Dynamically set the choices for the fields in the form constructor
+    def __init__(self, *args, **kwargs):
+        super(AddVisitForm, self).__init__(*args, **kwargs)
+
+        # Populate dynamic fields using model methods
+        self.reason_code.choices = [(item["code"], item["display"]) for item in Visit.get_reason_codes()]
+        self.status.choices = [(item["code"], item["display"]) for item in Visit.get_status_codes()]
+        self.class_code.choices = [(item["code"], item["display"]) for item in Visit.get_class_codes()]
+        self.priority.choices = [(item["code"], item["display"]) for item in Visit.get_priority_codes()]
+        self.location.choices = [(item["code"], item["display"]) for item in Visit.get_locations()]
+        
 class SurveyForm(FlaskForm):
     q1 = RadioField('I think that I would like to use this system frequently.',
                     choices=[('1', 'Strongly Disagree'), ('2', 'Disagree'), ('3', 'Neutral'), 
@@ -356,3 +367,21 @@ class SurveyForm(FlaskForm):
                      choices=[('1', 'Strongly Disagree'), ('2', 'Disagree'), ('3', 'Neutral'), 
                               ('4', 'Agree'), ('5', 'Strongly Agree')])
     submit = SubmitField("Submit Survey")
+
+class UploadDocumentForm(FlaskForm):
+    document_name = StringField('Document Name', validators=[DataRequired()])
+    document_file = FileField('Select File', validators=[
+        FileRequired(),
+        FileAllowed(['pdf', 'doc', 'docx'], 'Only PDF, DOC, and DOCX files are allowed!')
+    ])
+
+class RequestResetForm(FlaskForm):
+    email = StringField('Email', validators=[DataRequired(), Email()])
+    submit = SubmitField('Request Password Reset')
+
+    
+
+class ResetPasswordForm(FlaskForm):
+    password = PasswordField('New Password', validators=[DataRequired()])
+    confirm_password = PasswordField('Confirm Password', validators=[DataRequired(), EqualTo('password')])
+    submit = SubmitField('Reset Password')

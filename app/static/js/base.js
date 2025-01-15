@@ -23,3 +23,9 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 });
+
+
+document.addEventListener('DOMContentLoaded', () => {
+    const uploadButton = document.querySelector('[data-bs-target="#uploadDocumentModal"]');
+    uploadButton.addEventListener('click', () => console.log('Upload button clicked'));
+});

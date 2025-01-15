@@ -126,9 +126,73 @@
             </tbody>
         </table>
     </div>
-    
-        <!-- Add Patient Button -->
-<a href="{{ url_for('main.add_patient') }}" class="btn btn-success mt-4">Add New Patient</a>
+
+
+<!-- Button to trigger modal for adding new patient -->
+<button class="btn btn-success mt-4" data-bs-toggle="modal" data-bs-target="#addPatientModal">Add New Patient</button>
+<!-- Modal for Adding New Patient -->
+<div class="modal fade" id="addPatientModal" tabindex="-1" aria-labelledby="addPatientModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form method="POST"  action="{{ url_for('main.add_patient') }}">
+                {{ patient_form.hidden_tag() }}
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addPatientModalLabel">Add New Patient</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        {{ patient_form.firstname.label(class_="form-label") }}
+                        {{ patient_form.firstname(class_="form-control") }}
+                    </div>
+                    <div class="mb-3">
+                        {{ patient_form.lastname.label(class_="form-label") }}
+                        {{ patient_form.lastname(class_="form-control") }}
+                    </div>
+                    <div class="mb-3">
+                        {{ patient_form.age.label(class_="form-label") }}
+                        {{ patient_form.age(class_="form-control") }}
+                    </div>
+                    <div class="mb-3">
+                        {{ patient_form.birthdate.label(class_="form-label") }}
+                        {{ patient_form.birthdate(class_="form-control") }}
+                    </div>
+                    <div class="mb-3">
+                        {{ patient_form.gender.label(class_="form-label") }}
+                        <div>
+                            {% for option in patient_form.gender %}
+                            <div class="form-check form-check-inline">
+                                {{ option(class='form-check-input') }}
+                                {{ option.label(class='form-check-label') }}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        {{ patient_form.contact_number.label(class_="form-label") }}
+                        {{ patient_form.contact_number(class_="form-control") }}
+                    </div>
+                    <div class="mb-3">
+                        {{ patient_form.home_address.label(class_="form-label") }}
+                        {{ patient_form.home_address(class_="form-control") }}
+                    </div>
+                    <div class="mb-3">
+                        {{ patient_form.ecd_name.label(class_="form-label") }}
+                        {{ patient_form.ecd_name(class_="form-control") }}
+                    </div>
+                    <div class="mb-3">
+                        {{ patient_form.ecd_contact_number.label(class_="form-label") }}
+                        {{ patient_form.ecd_contact_number(class_="form-control") }}
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">Add Patient</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
 {% endblock %}
 

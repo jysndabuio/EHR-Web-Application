@@ -18,6 +18,10 @@ def create_app():
     app.config['SECRET_KEY'] = Config.secret_key
     app.config.from_object(Config)
 
+    # Ensure upload folder exists
+    if not os.path.exists(app.config['UPLOAD_FOLDER']):
+        os.makedirs(app.config['UPLOAD_FOLDER'])
+
     # Initialize extensions
     db.init_app(app)
     migrate.init_app(app, db)

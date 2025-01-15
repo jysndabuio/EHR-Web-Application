@@ -1,11 +1,11 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app
+from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app, send_from_directory, abort
 from flask_login import login_user, logout_user, login_required, current_user
 from flask_mail import Message
 from datetime import datetime
-from .models import User, UserEducation, DoctorPatient, Patient, Visit, Appointment, SurveyResponse, Vitals, AllergyIntolerance, Observation,Immunization, Procedure,MedicalHistory, MedicationStatement
-from .forms import SurveyForm, RegisterForm,MedicationStatementForm,AllergyIntoleranceForm, AddVisitForm, PatientForm, AppointmentForm, VisitForm, ObservationForm, PasswordResetForm, UserUpdateProfile, PatientUpdateForm, ImmunizationForm, ProcedureForm, VitalsForm, MedicalHistoryForm
+from .models import User, UserEducation,LabScan, LabScanGroup, AdditionalDocument, DoctorPatient, Patient, Visit, Appointment, SurveyResponse, Vitals, AllergyIntolerance, Observation,Immunization, Procedure,MedicalHistory, MedicationStatement
+from .forms import SurveyForm,UploadDocumentForm,RequestResetForm, ResetPasswordForm, RegisterForm,MedicationStatementForm,AllergyIntoleranceForm, AddVisitForm, PatientForm, AppointmentForm, VisitForm, ObservationForm, PasswordResetForm, UserUpdateProfile, PatientUpdateForm, ImmunizationForm, ProcedureForm, VitalsForm, MedicalHistoryForm
 from . import db, bcrypt, mail
-from .utils import verify_password_reset_token, generate_password_reset_token, allowed_file
+from .utils import allowed_file, send_reset_email
 from .config import Config
 from werkzeug.utils import secure_filename
 import os
@@ -28,9 +28,16 @@ def redirect_dashboard(role):
 def index():
     return render_template('home.html')
 
-@bp.route('/extra')
-def extra():
-    return render_template('test.html')
+@bp.route('/about_me')
+@login_required
+def about_me():
+    return render_template('about_me.html')
+
+
+@bp.route('/under_construction')
+def under_construction():
+    return render_template('under_construction.html')
+
 
 @bp.route('/login', methods=['GET', 'POST'])
 def login():
@@ -150,10 +157,12 @@ def doctor_patients():
 
     # Get the final list of patients
     patients = patients_query.all()
+    patient_form = PatientForm()
 
 
     return render_template('doctor_patients.html', 
                            patients=patients, 
+                           patient_form=patient_form,
                            show_return_button=True, 
                            return_url=request.referrer)
 
@@ -181,6 +190,9 @@ def view_patient(patient_id):
         joinedload(Patient.procedures),
         joinedload(Patient.medical_history)
     ).filter_by(id=patient_id).first_or_404()
+
+    lab_scan_groups = patient.lab_scan_groups
+    additional_documents = AdditionalDocument.query.filter_by(patient_id=patient_id).all()
 
     doctor_patient = DoctorPatient.query.filter_by(doctor_id=current_user.id, patient_id=patient_id).first()
     if not doctor_patient:
@@ -216,21 +228,30 @@ def view_patient(patient_id):
     allergyform = AllergyIntoleranceForm()
     appointmentform=AppointmentForm()
     medicalhistoryform = MedicalHistoryForm()
+    editmedicalhistoryform=MedicalHistoryForm()
+    uploadform=UploadDocumentForm()
+    visit_form = AddVisitForm()
 
     return render_template(
         'view_patient.html', 
         patient=patient, 
+        visit=patient.visits,
         latest_appointments=latest_appointments,
         sorted_visits=sorted_visits,
         immunizations=patient.immunizations,
         allergies=patient.allergies,
         medications=patient.medications,
         medicalhistory=patient.medical_history, 
+        lab_scan_groups = lab_scan_groups,
         immunizationform=immunizationform,
         medicationform = medicationform,
         appointmentform = appointmentform,
         allergyform = allergyform,
         medicalhistoryform=medicalhistoryform,
+        editmedicalhistoryform=editmedicalhistoryform,
+        additional_documents = additional_documents,
+        uploadform = uploadform,
+        visit_form=visit_form,
         show_return_button=True, 
         return_url=request.referrer
     )
@@ -508,7 +529,7 @@ def add_medication(visit_id):
 
 
         flash('Immunization added successfully.', 'success')
-        return redirect(url_for('main.view_visit', patient_id=visit.id))
+        return redirect(url_for('main.view_visit', visit_id=visit.id))
 
     # Pass the patient and form to the template
     return render_template(
@@ -969,14 +990,37 @@ def edit_medication(patient_id, medication_id):
     
     form = MedicationStatementForm(obj=medication)  # Pre-populate form with existing medication data
     
-    if form.validate_on_submit():
-        medication.medication_code = form.medication_code.data
-        medication.status = form.status.data
-        medication.effectivePeriod_start = form.effectivePeriod_start.data
-        medication.effectivePeriod_end = form.effectivePeriod_end.data
-        medication.dosage_instruction = form.dosage_instruction.data
-        medication.adherence = form.adherence.data
-        medication.reason_code = form.reason_code.data
+    if request.method == 'POST':
+        medication_code = request.form.get('medication_code')
+        medication_name = request.form.get('medication_name')
+        status = request.form.get('status')
+        effectivePeriod_start = request.form.get('effectivePeriod_start')
+        effectivePeriod_end = request.form.get('effectivePeriod_end')
+        date_asserted = request.form.get('date_asserted')
+        Adherence = request.form.get('Adherence')
+        reason_code = request.form.get('reason_code')
+        reason_reference = request.form.get('reason_reference')
+        status_reason = request.form.get('status_reason')
+        information_source = request.form.get('information_source')
+        notes = request.form.get('notes')
+        route_of_administration = request.form.get('route_of_administration')
+        timing = request.form.get('timing')
+
+        medication.medication_code = medication_code
+        medication.medication_name = medication_name
+        medication.status = status
+        medication.effectivePeriod_start = effectivePeriod_start
+        medication.effectivePeriod_end = effectivePeriod_end
+        medication.date_asserted = date_asserted
+        medication.Adherence = Adherence
+        medication.reason_code = reason_code
+        medication.reason_reference = reason_reference
+        medication.status_reason = status_reason
+        medication.information_source = information_source
+        medication.notes = notes
+        medication.route_of_administration = route_of_administration
+        medication.timing = timing    
+        
         
         db.session.commit()
         flash('Medication updated successfully.', 'success')
@@ -1015,19 +1059,16 @@ def edit_immunization(patient_id, immunization_id):
         manufacturer = request.form.get('manufacturer')
         notes = request.form.get('notes')
         
-        # Create a new immunization instance
-        immunization = Immunization(
-            vaccine_code=vaccine_code,
-            status=status,
-            date=date,
-            lot_number=lot_number,
-            site=site,
-            route=route,
-            dose_quantity=dose_quantity,
-            manufacturer=manufacturer,
-            notes=notes,
-        )
-
+        
+        immunization.vaccine_code=vaccine_code
+        immunization.status=status
+        immunization.date=date
+        immunization.lot_number=lot_number
+        immunization.site=site
+        immunization.route=route
+        immunization.dose_quantity=dose_quantity
+        immunization.manufacturer=manufacturer
+        immunization.notes=notes
         
         db.session.commit()
         flash('Immunization updated successfully.', 'success')
@@ -1114,7 +1155,7 @@ def edit_appointment(patient_id, appointment_id):
         # Commit changes to the database
         db.session.commit()
         flash('Appointment updated successfully.', 'success')
-        return redirect(url_for('main.view_visit', visit_id=appointment.visit.id))
+        return redirect(url_for('main.view_patient', patient_id=appointment.patient_id))
 
     return render_template(
         'edit_appointment.html',
@@ -1123,9 +1164,9 @@ def edit_appointment(patient_id, appointment_id):
         appointment=appointment,
     )
 
-@bp.route('/doctor/patient/<string:patient_id>/edit_medical_history/<int:medical_history_id>', methods=['GET', 'POST'])
+@bp.route('/doctor/patient/<string:patient_id>/edit_medical_history/<int:medicalhistory_id>', methods=['GET', 'POST'])
 @login_required
-def edit_medical_history(patient_id, medical_history_id):
+def edit_medical_history(patient_id, medicalhistory_id):
     if current_user.role != 'doctor':
         flash('Access unauthorized.', 'danger')
         return redirect(url_for('login'))
@@ -1138,7 +1179,7 @@ def edit_medical_history(patient_id, medical_history_id):
         return redirect(url_for('main.doctor_dashboard'))
 
     # Fetch the appointment object
-    medical_history = MedicalHistory.query.get_or_404(medical_history_id)
+    medical_history = MedicalHistory.query.get_or_404(medicalhistory_id)
 
     # Pre-populate the form with existing appointment data
     editmedicalhistoryform = AppointmentForm(obj=medical_history)
@@ -1429,8 +1470,6 @@ def delete_vitals(vitals_id):
 def delete_appointment(appointment_id):
     # Fetch the appointment record or return a 404 if not found
     appointment = Appointment.query.get_or_404(appointment_id)
-    visit = appointment.visit  # Assuming the `visit` relationship is set up correctly
-
     # Ensure the user has the appropriate permissions
     if current_user.role != 'doctor':
         flash('Access unauthorized.', 'danger')
@@ -1439,25 +1478,6 @@ def delete_appointment(appointment_id):
     # Delete the appointment record
     db.session.delete(appointment)
     db.session.commit()
-
-    # Check if the associated visit contains any other medical records
-    if (
-        not visit.immunizations  # No immunizations left
-        and not visit.vitals  # No vitals left
-        and not visit.observations  # No observations left
-        and not visit.procedures  # No procedures left
-        and not visit.medications  # No medications left
-        and not visit.allergies  # No allergies left
-        and not visit.medical_histories  # No medical histories left
-        and not visit.appointments  # No appointments left
-    ):
-        # If no related records are left, delete the visit
-        db.session.delete(visit)
-        db.session.commit()
-
-        flash('Appointment and associated visit deleted successfully.', 'success')
-    else:
-        flash('Appointment deleted successfully.', 'success')
 
     # Redirect back to the patient's details page
     return redirect(url_for('main.view_patient', patient_id=appointment.patient_id))
@@ -1494,6 +1514,24 @@ def delete_medical_history(patient_id, medicalhistory_id):
     flash('Patient deleted successfully.', 'success')
     return redirect(url_for('main.doctor_dashboard'))
 
+def calculate_sus_score(responses):
+    """
+    Function to calculate the SUS score based on the responses.
+    Args:
+    - responses (list of int): The list of responses (1-5) to the survey questions.
+
+    Returns:
+    - float: The SUS score calculated using the provided responses.
+    """
+    # Calculate odd and even sums
+    odd_sum = sum(responses[i - 1] - 1 for i in [1, 3, 5, 7, 9])  # Odd questions: subtract 1
+    even_sum = sum(5 - responses[i - 1] for i in [2, 4, 6, 8, 10])  # Even questions: subtract from 5
+
+    # SUS score formula
+    sus_score = (odd_sum + even_sum) * 2.5
+    return sus_score
+
+
 @bp.route('/doctor/<string:doctor_id>/survey', methods=['GET', 'POST'])
 @login_required
 def survey(doctor_id):
@@ -1502,58 +1540,74 @@ def survey(doctor_id):
         flash("Doctor not found.", "error")
         return redirect(url_for('main.doctor_dashboard'))
 
-    # Check if the survey has already been submitted
+    # Check if the survey has already been submitted by the user (allow overwriting)
     previous_response = SurveyResponse.query.filter_by(user_id=current_user.id).first()
+
+    # Calculate the previous SUS score if a response already exists
     if previous_response:
-        # Calculate the SUS score based on the previous response
         responses = [
             previous_response.q1, previous_response.q2, previous_response.q3,
             previous_response.q4, previous_response.q5, previous_response.q6,
             previous_response.q7, previous_response.q8, previous_response.q9,
             previous_response.q10
         ]
-        odd_sum = sum(responses[i - 1] - 1 for i in [1, 3, 5, 7, 9])  # Odd questions: subtract 1
-        even_sum = sum(5 - responses[i - 1] for i in [2, 4, 6, 8, 10])  # Even questions: subtract from 5
-        sus_score = (odd_sum + even_sum) * 2.5
+        sus_score = calculate_sus_score(responses)
+    else:
+        sus_score = None
 
-        # Render the score display template
-        return render_template('survey_score.html', sus_score=sus_score)
-
-    # If no previous response, show the survey form
     form = SurveyForm()
+
     if form.validate_on_submit():
-        # Convert survey responses to integers for scoring
-        responses = [int(form.q1.data), int(form.q2.data), int(form.q3.data), int(form.q4.data),
-                     int(form.q5.data), int(form.q6.data), int(form.q7.data), int(form.q8.data),
-                     int(form.q9.data), int(form.q10.data)]
+        # Collect the responses
+        responses = [
+            int(form.q1.data), int(form.q2.data), int(form.q3.data), 
+            int(form.q4.data), int(form.q5.data), int(form.q6.data), 
+            int(form.q7.data), int(form.q8.data), int(form.q9.data), 
+            int(form.q10.data)
+        ]
+        
+        # Calculate SUS Score using the helper function
+        sus_score = calculate_sus_score(responses)
 
-        # Calculate SUS Score
-        odd_sum = sum(responses[i - 1] - 1 for i in [1, 3, 5, 7, 9])  # Odd questions: subtract 1
-        even_sum = sum(5 - responses[i - 1] for i in [2, 4, 6, 8, 10])  # Even questions: subtract from 5
-        sus_score = (odd_sum + even_sum) * 2.5
+        if previous_response:
+            # Update the existing response if the survey has been submitted already
+            previous_response.q1 = responses[0]
+            previous_response.q2 = responses[1]
+            previous_response.q3 = responses[2]
+            previous_response.q4 = responses[3]
+            previous_response.q5 = responses[4]
+            previous_response.q6 = responses[5]
+            previous_response.q7 = responses[6]
+            previous_response.q8 = responses[7]
+            previous_response.q9 = responses[8]
+            previous_response.q10 = responses[9]
+            previous_response.created_at = db.func.current_timestamp()  # Update timestamp to current time
+        else:
+            # Save a new survey response if it hasn't been submitted yet
+            response = SurveyResponse(
+                user_id=current_user.id,  # Only store the user_id (doctor will be identified as a user)
+                q1=responses[0],
+                q2=responses[1],
+                q3=responses[2],
+                q4=responses[3],
+                q5=responses[4],
+                q6=responses[5],
+                q7=responses[6],
+                q8=responses[7],
+                q9=responses[8],
+                q10=responses[9]
+            )
+            db.session.add(response)
 
-        # Save responses to the database
-        response = SurveyResponse(
-            user_id=current_user.id,
-            q1=responses[0],
-            q2=responses[1],
-            q3=responses[2],
-            q4=responses[3],
-            q5=responses[4],
-            q6=responses[5],
-            q7=responses[6],
-            q8=responses[7],
-            q9=responses[8],
-            q10=responses[9]
-        )
-        db.session.add(response)
-        current_user.has_submitted_survey = True
-        db.session.commit()
+        db.session.commit()  # Commit the changes to the database
 
         flash(f"Thank you for your feedback! Your SUS score is {sus_score:.2f}.", "success")
         return redirect(url_for('main.doctor_dashboard'))
 
-    return render_template('SUSForm.html', form=form)
+    # If the form is not yet submitted, render the survey form
+    return render_template('SUSForm.html', form=form, doctor=doctor, previous_response=previous_response, sus_score=sus_score)
+
+
 
 @bp.route('/account', methods=['GET', 'POST'])
 @login_required
@@ -1576,21 +1630,6 @@ def account():
 
     # Handle form submission
     if form.validate_on_submit():
-        # Handle image upload
-        if 'profile_image' in request.files and request.files['profile_image'].filename:
-            file = request.files['profile_image']
-            if file and Config.allowed_file(file.filename):
-                try:
-                    filename = secure_filename(file.filename)
-                    filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
-                    file.save(filepath)
-                    user.profile_image = f'image/{filename}'
-                except Exception as e:
-                    flash(f'Error uploading image: {str(e)}', 'danger')
-                    return redirect(url_for('main.account'))
-            else:
-                flash('Invalid file type. Please upload a valid image (JPG, PNG, GIF).', 'danger')
-                return redirect(url_for('main.account'))
 
         # Update User fields
         new_username = form.username.data
@@ -1692,49 +1731,6 @@ def admin_dashboard():
         return redirect_dashboard(current_user.role)
     return render_template('admin_dashboard.html')
 
-@bp.route('/password_reset_request', methods=['GET', 'POST'])
-def password_reset_request():
-    form = PasswordResetForm()
-    if form.validate_on_submit():
-        user = User.query.filter_by(email=form.email.data).first()
-        if user:
-            # Generate token and send password reset email
-            token = generate_password_reset_token(user)
-            reset_url = url_for('main.password_reset', token=token, _external=True)
-            send_reset_email(user.email, reset_url)
-            flash('Password reset email sent. Please check your inbox.')
-        else:
-            flash('Email not found.')
-    return render_template('password_reset_request.html', form=form)
-
-def send_reset_email(email, reset_url):
-    msg = Message('Password Reset Request', recipients=[email])
-    msg.body = f"To reset your password, click the following link: {reset_url}\nIf you didn't make this request, please ignore this email."
-    mail.send(msg)
-
-@bp.route('/password_reset/<token>', methods=['GET', 'POST'])
-def password_reset(token):
-    # Verify the token
-    user_id = verify_password_reset_token(token)
-    if not user_id:
-        flash('The reset link is invalid or has expired.', 'danger')
-        return redirect(url_for('main.login'))
-
-    user = User.query.get(user_id)
-    if not user:
-        flash('User not found.', 'danger')
-        return redirect(url_for('main.login'))
-
-    form = PasswordResetForm()
-    if form.validate_on_submit():
-        # Update the user's password
-        user.password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
-        db.session.commit()
-        flash('Your password has been reset. Please log in.', 'success')
-        return redirect(url_for('main.login'))
-
-    return render_template('password_reset.html', form=form)
-
 @bp.route('/logout')
 @login_required
 def logout():
@@ -1742,7 +1738,252 @@ def logout():
     flash('You have been logged out.')
     return redirect(url_for('main.index'))
 
-@bp.route('/forgotpassword')
-def forgotpassword():
-    return "Test"#
+@bp.route('/upload_document/<string:patient_id>', methods=['GET', 'POST'])
+def upload_document(patient_id):
+    uploadform = UploadDocumentForm()
+    if uploadform.validate_on_submit():
+        document_name = uploadform.document_name.data
+        document_file = uploadform.document_file.data
+        
+        # Save the file
+        filename = secure_filename(document_file.filename)
+        filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+        document_file.save(filepath)
+        
+        # Save to database
+        new_document = AdditionalDocument(
+            patient_id=patient_id,
+            document_name=document_name,
+            document_file=filename
+        )
+        db.session.add(new_document)
+        db.session.commit()
+        
+        flash('Document uploaded successfully!', 'success')
+        return redirect(url_for('main.patient_details', patient_id=patient_id))
+    
+    if uploadform.errors:
+        flash('Error uploading document. Please check the form.', 'danger')
+
+    return render_template('upload_document.html', uploadform=uploadform)
+
+@bp.route('/upload_document_page/<string:patient_id>', methods=['GET', 'POST'])
+def upload_document_page(patient_id):
+    form = UploadDocumentForm()
+    if form.validate_on_submit():
+        document_name = form.document_name.data
+        document_file = form.document_file.data
+        
+        # Save the file
+        filename = secure_filename(document_file.filename)
+        filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+        document_file.save(filepath)
+        
+        # Save to database
+        new_document = AdditionalDocument(
+            patient_id=patient_id,
+            document_name=document_name,
+            document_file=filename
+        )
+        db.session.add(new_document)
+        db.session.commit()
+        
+        flash('Document uploaded successfully!', 'success')
+        return redirect(url_for('main.view_patient', patient_id=patient_id))
+    
+    return render_template('upload_document_page.html', form=form, patient_id=patient_id)
+
+
+@bp.route('/download_document/<int:document_id>', methods=['GET'])
+def download_document(document_id):
+    document = AdditionalDocument.query.get(document_id)
+    if not document:
+        abort(404)
+
+    # Assuming documents are stored in the configured UPLOAD_FOLDER
+    upload_folder = current_app.config['UPLOAD_FOLDER']
+    filepath = os.path.join(upload_folder, document.document_file)
+
+    if not os.path.exists(filepath):
+        abort(404)
+
+    return send_from_directory(directory=upload_folder, path=document.document_file, as_attachment=True)
+
+
+@bp.route('/create_lab_scan_group/<string:patient_id>', methods=['POST'])
+def create_lab_scan_group(patient_id):
+    group_name = request.form['group_name']
+    if group_name:
+        # Create the folder for lab scans
+        new_group = LabScanGroup(group_name=group_name, patient_id=patient_id)
+        db.session.add(new_group)
+        db.session.commit()
+        flash('Lab scan folder created successfully!', 'success')
+    else:
+        flash('Folder name cannot be empty.', 'danger')
+
+    # Redirect back to patient details page
+    return redirect(url_for('main.view_patient', patient_id=patient_id))
+
+
+@bp.route('/view_lab_scans/<string:patient_id>/<int:group_id>',  methods=['GET', 'POST'])
+def view_lab_scans(patient_id, group_id):
+    patient = Patient.query.get(patient_id)
+    group = LabScanGroup.query.get_or_404(group_id)  # Fetch the group by ID
+    scans = group.scans  # Fetch all scans related to this group
+    return render_template('view_lab_scans.html', group=group, scans=scans, patient=patient)
+
+@bp.route('/upload_lab_scan/<string:patient_id>/<int:group_id>', methods=['POST'])
+def upload_lab_scan(patient_id, group_id):
+    # Ensure patient and group exist
+    patient = Patient.query.get(patient_id)
+    group = LabScanGroup.query.get(group_id)
+    if not patient or not group:
+        flash('Invalid patient or group ID', 'danger')
+        return redirect(url_for('main.view_lab_scans', patient_id=patient_id, group_id=group_id))
+
+    # Check if the form has a file
+    if 'scan_file' not in request.files:
+        flash('No file part', 'danger')
+        return redirect(url_for('main.view_lab_scans', patient_id=patient_id, group_id=group_id))
+
+    scan_file = request.files['scan_file']
+
+    # If no file is selected
+    if scan_file.filename == '':
+        flash('No file selected', 'danger')
+        return redirect(url_for('main.view_lab_scans', patient_id=patient_id, group_id=group_id))
+
+    # Ensure the file is allowed
+    if scan_file and allowed_file(scan_file.filename):
+        filename = secure_filename(scan_file.filename)
+        file_path = os.path.join('lab_scans', filename)
+        scan_file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], file_path))
+
+        # Save the lab scan record to the database
+        new_scan = LabScan(
+            filename=filename,
+            file_path=os.path.join('lab_scans', filename),  # Corrected file path here
+            group_id=group.id
+        )
+        db.session.add(new_scan)
+        db.session.commit()
+
+        flash('Lab scan uploaded successfully!', 'success')
+        return redirect(url_for('main.view_lab_scans', patient_id=patient.id, group_id=group.id))
+    else:
+        flash('Invalid file type. Only image files are allowed.', 'danger')
+        return redirect(url_for('main.view_lab_scans', patient_id=patient.id, group_id=group.id))
+
+
+@bp.route('/lab_scan_groups/<string:patient_id>', methods=['GET'])
+def lab_scan_groups(patient_id):
+    patient = Patient.query.get_or_404(patient_id)  # Fetch the patient
+    lab_scan_groups = LabScanGroup.query.filter_by(patient_id=patient.id).all()  # Fetch all the lab scan groups for the patient
+    return render_template('view_patient.html', patient=patient, lab_scan_groups=lab_scan_groups)
+
+@bp.route('/download_lab_scan/<int:scan_id>', methods=['GET'])
+def view_scan(scan_id):
+    # Fetch the lab scan by its ID
+    scan = LabScan.query.get(scan_id)
+    if not scan:
+        print(f"Scan with ID {scan_id} not found.")
+        abort(404)
+    
+    # Construct the file path
+    upload_folder = current_app.config['UPLOAD_FOLDER']
+    filepath = os.path.join(upload_folder, scan.file_path)  # Corrected path
+
+    # Check if file exists
+    if not os.path.exists(filepath):
+        print(f"File not found: {filepath}")
+        abort(404)
+    
+    # If everything is correct, send the file
+    return send_from_directory(directory=upload_folder, path=scan.file_path, as_attachment=True)
+
+
+@bp.route('/delete_lab_scan/<string:patient_id>/<int:scan_id>', methods=['POST'])
+def delete_lab_scan(patient_id, scan_id):
+    scan = LabScan.query.get_or_404(scan_id)  # Fetch the scan by ID
+    group_id = scan.group_id  # Keep track of the group for redirection
+    
+    # Remove the scan from the database and the file system
+    db.session.delete(scan)
+    db.session.commit()
+    
+    # Optionally, delete the file from the file system
+    try:
+        os.remove(scan.file_path)  # Delete the file
+    except FileNotFoundError:
+        pass
+    
+    flash('Lab scan deleted successfully.', 'success')
+    return redirect(url_for('main.view_lab_scans', patient_id = patient_id, group_id=group_id))
+
+
+@bp.route('/delete_document/<string:patient_id>/<int:document_id>', methods=['POST'])
+def delete_document(patient_id, document_id):
+    # Fetch the document by its ID
+    document = AdditionalDocument.query.get(document_id)
+    if not document:
+        flash('Document not found', 'danger')
+        return redirect(url_for('main.view_patient', patient_id=patient_id))
+
+    # Delete the document record from the database
+    db.session.delete(document)
+    db.session.commit()
+
+    # Optionally, delete the file from the file system if it's stored
+    upload_folder = current_app.config['UPLOAD_FOLDER']
+    filepath = os.path.join(upload_folder, document.document_file)
+    if os.path.exists(filepath):
+        os.remove(filepath)
+
+    flash('Document deleted successfully!', 'success')
+    return redirect(url_for('main.view_patient', patient_id=patient_id))
+
+@bp.route("/forgotpassword", methods=['GET', 'POST'])
+def forgot_password():
+    form = RequestResetForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(email=form.email.data).first()
+        if user:
+            send_reset_email(user)  # Send the reset email with token
+            flash('An email has been sent with instructions to reset your password.', 'info')
+            return redirect(url_for('main.forgot_password'))  # Redirect to the same page
+        else:
+            flash('No account found with that email. Please check your email or register.', 'danger')
+            return redirect(url_for('main.forgot_password'))
+    return render_template('forgot_password.html', form=form)
+
+@bp.route("/verify_reset_token", methods=['POST'])
+def verify_reset_token():
+    token = request.form['token']
+    user = User.query.filter_by(reset_token=token).first()
+
+    if not user or not user.verify_reset_token(token):
+        flash('Invalid or expired token. Please try again.', 'warning')
+        return redirect(url_for('main.forgot_password'))
+
+    # If valid, redirect to the reset password form
+    return redirect(url_for('main.reset_password', token=token))
+
+@bp.route("/reset_password/<token>", methods=['GET', 'POST'])
+def reset_password(token):
+    user = User.query.filter_by(reset_token=token).first()
+
+    if not user or not user.verify_reset_token(token):
+        flash('That is an invalid or expired token.', 'warning')
+        return redirect(url_for('main.forgot_password'))  # Redirect to forgot password page
+
+    if request.method == 'POST':
+        new_password = request.form['password']
+        user.set_password(new_password)
+        user.clear_reset_token()  # Clear the token once it is used
+        flash('Your password has been updated!', 'success')
+        return redirect(url_for('main.login'))  # Redirect to login after password reset
+
+    return render_template('reset_password.html', token=token)
+
 

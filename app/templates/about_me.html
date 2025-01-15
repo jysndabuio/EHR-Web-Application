@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <!-- About Header Section -->
+        <div class="col-12 text-center mb-4">
+            <h1>Welcome to the EHR System</h1>
+            <p class="lead">A platform designed to help doctors efficiently manage patient data.</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Section Explaining the System -->
+        <div class="col-lg-6">
+            <h2>About the System</h2>
+            <p>
+                Our Electronic Health Record (EHR) system is designed to streamline patient data management for healthcare professionals. 
+                It allows doctors to efficiently manage patient records, create new patient profiles, track medical history, and perform various operations in real-time.
+            </p>
+            <p>
+                This system provides an intuitive interface for doctors to interact with patient data, providing capabilities such as CRUD (Create, Read, Update, Delete) operations.
+            </p>
+        </div>
+        
+        <!-- Section for Doctor's Profile or Information -->
+        <div class="col-lg-6">
+            <h2>About the Developer</h2>
+            <p>
+                This system has been developed by a team of dedicated developers and healthcare professionals with the goal of improving healthcare delivery through technology.
+            </p>
+            <ul>
+                <li><strong>Jayson Dabu</strong> - Lead Developer</li>
+                <li><strong>Student</strong></li>
+                <li><strong>Health Informatics</strong></li>
+                <li><strong>THD ECRI Campus</strong></li>
+            </ul>
+        </div>
+    </div>
+
+    <hr class="my-5">
+
+    <!-- System Features Section -->
+    <div class="row">
+        <div class="col-12">
+            <h2 class="text-center mb-4">Key Features</h2>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Patient Management</h5>
+                            <p class="card-text">Manage patient profiles, including personal information, medical history, allergies, and more.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Medical Records</h5>
+                            <p class="card-text">Store and track patient medical records, such as diagnoses, medications, and treatment plans.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Appointment Scheduling</h5>
+                            <p class="card-text">Schedule, manage, and track patient appointments with ease. Integrates with the patient profile.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

@@ -38,8 +38,6 @@
             <button class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#medicationModal">Add Medication</button>
             <button class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#vitalsModal">Add Vitals</button>
             <button class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#allergyModal">Add Allergy</button>
-            <button class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#medicalHistoryModal">Add Medical History</button>
-            <button class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#procedureModal">Add Procedure</button>
             <button class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#observationModal">Add Observation</button>
         </div>
     </div>
@@ -687,7 +685,7 @@
                                     <label for="code" class="form-label">Code</label>
                                     <select class="form-control" id="code" name="code" required>
                                         {% for code, display in vitalsform.code.choices %}
-                                        <option value="{{ code }}">{{ display }}</option>
+                                        <option value="{{ code }}">{{ code}}-{{ display }}</option>
                                         {% endfor %}
                                     </select>
                                 </div>
@@ -703,7 +701,7 @@
                                     <label for="unit" class="form-label">Unit</label>
                                     <select class="form-control" id="unit" name="unit" required>
                                         {% for code, display in vitalsform.unit.choices %}
-                                        <option value="{{ code }}">{{ display }}</option>
+                                        <option value="{{ code }}">{{ code }}</option>
                                         {% endfor %}
                                     </select>
                                 </div>

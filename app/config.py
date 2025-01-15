@@ -13,9 +13,14 @@ class Config:
     TOKEN_SECRET_KEY = os.getenv('TOKEN_SECRET_KEY') 
     SQLALCHEMY_TRACK_MODIFICATIONS = False 
     SQLALCHEMY_DATABASE_URI = f"mysql+pymysql://{username}:{password}@localhost/EHR_DB_MODEL"
-    BASE_DIR = os.path.abspath(os.path.dirname(__file__))  # Base directory of the app
-    UPLOAD_FOLDER = os.path.join(BASE_DIR, 'static', 'image')  # Upload folder path
-    ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+    UPLOAD_FOLDER = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'static/uploads')
+    ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'pdf', 'doc', 'docx'}
+    MAIL_SERVER = 'smtp.gmail.com'
+    MAIL_PORT = 587
+    MAIL_USE_TLS = True
+    MAIL_USERNAME = os.getenv('MAIL_USERNAME')
+    MAIL_PASSWORD = os.getenv('MAIL_PASSWORD')
+
 
     @staticmethod
     def allowed_file(filename):

@@ -1,9 +1,11 @@
-import uuid
-from datetime import datetime, date
-from . import db, bcrypt  # Import db after it's initialized in __init__.py
+import uuid, secrets
+from datetime import datetime, date, timedelta
+from . import db, bcrypt
 from flask_login import UserMixin
 from sqlalchemy import ForeignKey, event
 from sqlalchemy.orm import relationship
+from itsdangerous import URLSafeTimedSerializer as Serializer
+from flask import current_app
 
 
 class User(UserMixin, db.Model):
@@ -29,6 +31,8 @@ class User(UserMixin, db.Model):
     created_at = db.Column(db.DateTime, default=db.func.now())
     profile_image = db.Column(db.String(255), nullable=True, default='image/default_profile.jpg')
     has_submitted_survey = db.Column(db.Boolean, default=False)
+    reset_token = db.Column(db.String(128), nullable=True)
+    reset_token_expiration = db.Column(db.DateTime, nullable=True)
 
     # Relationships
     education_records = relationship('UserEducation', back_populates='user', lazy=True)
@@ -48,8 +52,26 @@ class User(UserMixin, db.Model):
     def check_password(self, password):
         """Checks if the provided password matches the stored hash."""
         return bcrypt.check_password_hash(self.password, password)
-    
+    def set_reset_token(self):
+        """Generate a unique token and set expiration"""
+        token = secrets.token_hex(16)  # Generates a random 32-character hex token
+        self.reset_token = token
+        self.reset_token_expiration = datetime.utcnow() + timedelta(hours=1)  # Token expires in 1 hour
+        db.session.commit()
+        return token
 
+    def verify_reset_token(self, token):
+        """Verify if the reset token is valid"""
+        if self.reset_token == token and self.reset_token_expiration > datetime.utcnow():
+            return True
+        return False
+
+    def clear_reset_token(self):
+        """Clear the reset token once it's used"""
+        self.reset_token = None
+        self.reset_token_expiration = None
+        db.session.commit()
+    
     @staticmethod
     def generate_user_id(session):
         """
@@ -72,30 +94,11 @@ class User(UserMixin, db.Model):
 
         # Format the user ID with zero-padded suffix
         return f"{prefix}{str(new_number).zfill(4)}"
-
-
 @event.listens_for(User, 'before_insert')
 def set_user_id(mapper, connection, target):
     if not target.user_id:
         session = db.session
         target.user_id = User.generate_user_id(session)
-
-class SurveyResponse(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.String(50), db.ForeignKey('users.id'), nullable=False)
-    q1 = db.Column(db.Integer, nullable=False)
-    q2 = db.Column(db.Integer, nullable=False)
-    q3 = db.Column(db.Integer, nullable=False)
-    q4 = db.Column(db.Integer, nullable=False)
-    q5 = db.Column(db.Integer, nullable=False)
-    q6 = db.Column(db.Integer, nullable=False)
-    q7 = db.Column(db.Integer, nullable=False)
-    q8 = db.Column(db.Integer, nullable=False)
-    q9 = db.Column(db.Integer, nullable=False)
-    q10 = db.Column(db.Integer, nullable=False)
-    created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
-
-
 class UserEducation(UserMixin, db.Model):
     __tablename__ = 'user_education'
 
@@ -114,8 +117,6 @@ class UserEducation(UserMixin, db.Model):
 
     def __repr__(self):
         return f'<UserEducation {self.med_deg} for {self.user_id}>'
-
-
 class Patient(UserMixin, db.Model):
     __tablename__ = 'patient_basic'
 
@@ -144,6 +145,8 @@ class Patient(UserMixin, db.Model):
     medications = relationship('MedicationStatement', back_populates='patient', cascade='all, delete-orphan', lazy='select')
     appointments = relationship('Appointment', back_populates='patient',cascade='all, delete-orphan',  lazy='select')
     visits = relationship('Visit', back_populates='patient')
+    additional_documents = relationship('AdditionalDocument', back_populates='patient', lazy=True)
+    lab_scan_groups = db.relationship('LabScanGroup', back_populates='patient', lazy=True)
 
     @staticmethod
     def generate_patient_id(session):
@@ -171,8 +174,6 @@ class Patient(UserMixin, db.Model):
 
         # Format the patient ID with zero-padded suffix
         return f"{prefix}{str(new_number).zfill(4)}"
-
-
 @event.listens_for(Patient, 'before_insert')
 def set_patient_id(mapper, connection, target):
     if not target.patient_id:
@@ -182,7 +183,6 @@ def set_patient_id(mapper, connection, target):
         with session.begin_nested():
             target.patient_id = Patient.generate_patient_id(session)
 
-# Updated Many-to-Many Doctor-Patient model
 class DoctorPatient(UserMixin, db.Model):
     __tablename__ = 'doctor_patient'
 
@@ -193,7 +193,6 @@ class DoctorPatient(UserMixin, db.Model):
     # Relationships
     doctor = relationship('User', back_populates='patients')
     patient = relationship('Patient', back_populates='doctor_relationships')
-
 class Visit(UserMixin, db.Model):
     __tablename__ = 'visits'
 
@@ -302,7 +301,6 @@ class Visit(UserMixin, db.Model):
             {"code": "virtual", "display": "Virtual"},
             {"code": "hospital_room_101", "display": "Hospital Room 101"}
         ]
-
 class Observation(UserMixin, db.Model):
     __tablename__ = 'observation'
 
@@ -405,8 +403,6 @@ class Observation(UserMixin, db.Model):
         """Compute the code description dynamically."""
         code_map = {item["code"]: item["display"] for item in Observation.get_code_options()}
         return code_map.get(self.code, "Unknown Reason")
-
-# Updated AllergyIntolerance Model
 class AllergyIntolerance(UserMixin, db.Model):
     __tablename__ = 'allergy_intolerance'
 
@@ -467,8 +463,6 @@ class AllergyIntolerance(UserMixin, db.Model):
             {"code": "immediate", "display": "Immediate"},
             {"code": "delayed", "display": "Delayed"}
         ]
-
-# Updated MedicationStatement Model
 class MedicationStatement(UserMixin, db.Model):
     __tablename__ = 'medication_statement'
 
@@ -524,8 +518,6 @@ class MedicationStatement(UserMixin, db.Model):
             {"code": "inpatient", "display": "Inpatient"},
             {"code": "virtual", "display": "Virtual"}
         ]
-
-# Updated Immunization Model with more vaccines
 class Immunization(UserMixin, db.Model):
     __tablename__ = 'immunization'
 
@@ -602,8 +594,7 @@ class Immunization(UserMixin, db.Model):
     def vaccine_code_description(self):
         """Compute the vaccine code description dynamically."""
         vaccine_code_map = {item["code"]: item["display"] for item in Immunization.get_vaccine_codes()}
-        return vaccine_code_map.get(self.vaccine_code, "Unknown Reason")
-    
+        return vaccine_code_map.get(self.vaccine_code, "Unknown Reason")  
 class Appointment(UserMixin, db.Model):
     __tablename__ = 'appointment'
 
@@ -801,8 +792,6 @@ class MedicalHistory(UserMixin, db.Model):
             {"code": "LOINC", "display": "LOINC"},
             {"code": "CPT", "display": "CPT"}
         ]
-
-
 class Procedure(UserMixin, db.Model):
     __tablename__ = 'procedure'
 
@@ -888,26 +877,82 @@ class Vitals(UserMixin, db.Model):
     @staticmethod
     def get_unit_options():
         return [
-            {"code": "bpm", "display": "Beats per Minute", "applicable_to": ["heart-rate", "respiratory-rate"]},
-            {"code": "mmhg", "display": "Millimeters of Mercury", "applicable_to": ["blood-pressure"]},
-            {"code": "celsius", "display": "Celsius (°C)", "applicable_to": ["body-temperature"]},
-            {"code": "fahrenheit", "display": "Fahrenheit (°F)", "applicable_to": ["body-temperature"]},
-            {"code": "kg", "display": "Kilograms", "applicable_to": ["weight"]},
-            {"code": "cm", "display": "Centimeters", "applicable_to": ["height"]},
-            {"code": "m2", "display": "Square Meters", "applicable_to": ["bmi"]},
-            {"code": "%", "display": "Percentage", "applicable_to": ["oxygen-saturation"]}
+            {"code": "bpm", "display": "Beats per Minute"},
+            {"code": "mmhg", "display": "Millimeters of Mercury"},
+            {"code": "celsius", "display": "Celsius (°C)"},
+            {"code": "fahrenheit", "display": "Fahrenheit (°F)"},
+            {"code": "kg", "display": "Kilograms"},
+            {"code": "cm", "display": "Centimeters"},
+            {"code": "m2", "display": "Square Meters"},
+            {"code": "%", "display": "Percentage"},
+            {"code": "", "display": "Unitless"}
         ]
     
     @staticmethod
     def get_code_options():
         return [
-            {"code": "body-temperature", "display": "Body Temperature"},
-            {"code": "blood-pressure", "display": "Blood Pressure"},
-            {"code": "heart-rate", "display": "Heart Rate"},
-            {"code": "respiratory-rate", "display": "Respiratory Rate"},
-            {"code": "oxygen-saturation", "display": "Oxygen Saturation"},
-            {"code": "weight", "display": "Weight"},
-            {"code": "height", "display": "Height"},
-            {"code": "bmi", "display": "Body Mass Index (BMI)"}
+            {"code": "8310-5", "display": "Body Temperature"},  # LOINC code for Body Temperature
+            {"code": "85354-9", "display": "Blood Pressure"},   # LOINC code for Blood Pressure
+            {"code": "8867-4", "display": "Heart Rate"},        # LOINC code for Heart Rate
+            {"code": "9279-1", "display": "Respiratory Rate"},  # LOINC code for Respiratory Rate
+            {"code": "59408-5", "display": "Oxygen Saturation"},  # LOINC code for Oxygen Saturation
+            {"code": "29463-7", "display": "Weight"},           # LOINC code for Weight
+            {"code": "8302-2", "display": "Height"},           # LOINC code for Height
+            {"code": "39156-5", "display": "Body Mass Index (BMI)"}  # LOINC code for BMI
         ]
 
+class LabScanGroup(db.Model):
+    __tablename__ = 'lab_scan_groups'
+
+    id = db.Column(db.Integer, primary_key=True)
+    group_name = db.Column(db.String(100), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    patient_id = db.Column(db.String(50), db.ForeignKey('patient_basic.id'), nullable=False)
+    
+    # Relationship to Patient
+    patient = db.relationship('Patient', back_populates='lab_scan_groups', lazy=True)
+    
+    # Relationship to LabScan
+    scans = db.relationship('LabScan', back_populates='group', lazy=True)
+
+    def __repr__(self):
+        return f"<LabScanGroup {self.group_name}>"
+class LabScan(db.Model):
+    __tablename__ = 'lab_scans'
+
+    id = db.Column(db.Integer, primary_key=True)
+    filename = db.Column(db.String(255), nullable=False)
+    file_path = db.Column(db.String(255), nullable=False)
+    upload_date = db.Column(db.DateTime, default=datetime.utcnow)
+    group_id = db.Column(db.Integer, db.ForeignKey('lab_scan_groups.id'), nullable=False)
+
+    # Relationship to LabScanGroup
+    group = db.relationship('LabScanGroup', back_populates='scans', lazy=True)
+
+    def __repr__(self):
+        return f"<LabScan {self.filename}>"
+class AdditionalDocument(db.Model):
+    __tablename__ = 'additionaldocument'
+    id = db.Column(db.Integer, primary_key=True)
+    patient_id = db.Column(db.String(50), db.ForeignKey('patient_basic.id'), nullable=False)
+    document_name = db.Column(db.String(150), nullable=False)
+    document_file = db.Column(db.String(300), nullable=False)  # Path to the file
+    upload_date = db.Column(db.DateTime, default=datetime.utcnow)
+
+    patient = relationship('Patient', back_populates='additional_documents')
+class SurveyResponse(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.String(50), db.ForeignKey('users.id'), nullable=False)
+    q1 = db.Column(db.Integer, nullable=False)
+    q2 = db.Column(db.Integer, nullable=False)
+    q3 = db.Column(db.Integer, nullable=False)
+    q4 = db.Column(db.Integer, nullable=False)
+    q5 = db.Column(db.Integer, nullable=False)
+    q6 = db.Column(db.Integer, nullable=False)
+    q7 = db.Column(db.Integer, nullable=False)
+    q8 = db.Column(db.Integer, nullable=False)
+    q9 = db.Column(db.Integer, nullable=False)
+    q10 = db.Column(db.Integer, nullable=False)
+    created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
+
+    user = db.relationship('User', backref=db.backref('survey_responses', lazy=True))
