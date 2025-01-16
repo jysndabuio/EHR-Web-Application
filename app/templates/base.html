@@ -36,7 +36,7 @@
                         <a class="nav-link" href="{{ url_for('main.survey', doctor_id=current_user.id) }}">Survey</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#">About</a>
+                        <a class="nav-link" href="{{ url_for('main.about_me') }}">About</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('main.under_construction') }}">Extra</a>
@@ -47,11 +47,13 @@
             <!-- User Info (Profile Image & Username) -->
             <div class="d-flex align-items-center">
                 {% if current_user.is_authenticated %}
-                    <img src="{{ url_for('static', filename=current_user.profile_image) }}" 
+                    <a href="{{ url_for('main.account') }}">
+                        <img src="{{ url_for('static', filename=current_user.profile_image) }}" 
                          alt="Profile" 
                          class="rounded-circle me-2" 
                          style="width: 40px; height: 40px; object-fit: cover;">
-                    <span class="text-white pr-5">{{ current_user.username }}</span>
+                         <span class="text-white pr-5">{{ current_user.username }}</span>
+                    </a>
                     <a class="btn btn-light" href="{{ url_for('main.logout') }}">Logout</a>
                 {% else %}
                     <a class="btn btn-outline-light ms-2" href="{{ url_for('main.login') }}">Login</a>

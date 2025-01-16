@@ -68,10 +68,22 @@ def login():
 @bp.route('/register', methods=['GET', 'POST'])
 def register():
     form = RegisterForm()
-    form.role.data = 'doctor'  # Pre-set the role as "patient"
+    form.role.data = 'doctor'  # Pre-set the role as "doctor"
 
     if form.validate_on_submit():
-        # Create a new User object with role set to "patient"
+        # Check if username or email already exists
+        existing_user_by_username = User.query.filter_by(username=form.username.data).first()
+        existing_user_by_email = User.query.filter_by(email=form.email.data).first()
+
+        if existing_user_by_username:
+            flash('The username is already taken. Please choose a different username.', 'danger')
+            return render_template('register.html', form=form)
+
+        if existing_user_by_email:
+            flash('The email is already registered. Please use a different email or log in.', 'danger')
+            return render_template('register.html', form=form)
+
+        # Create a new User object with role set to "doctor"
         new_user = User(
             username=form.username.data,
             password=bcrypt.generate_password_hash(form.password.data).decode('utf-8'),
@@ -94,6 +106,7 @@ def register():
         return redirect(url_for('main.login', role='doctor'))
 
     return render_template('register.html', form=form)
+
 
 @bp.route('/patient_dashboard')
 @login_required
@@ -820,20 +833,20 @@ def edit_patient(patient_id):
 
     if request.method == 'POST':
         # Retrieve only the fields being updated
+        firstname = request.form.get('firstname')
+        lastname = request.form.get('lastname')
         entered_contact_number = request.form.get('contact_number')
         entered_home_address = request.form.get('home_address')
         entered_ecd_name = request.form.get('ecd_name')
         entered_ecd_contact_number = request.form.get('ecd_contact_number')
 
         # Update only the specific fields
-        if entered_contact_number:
-            patient.contact_number = entered_contact_number
-        if entered_home_address:
-            patient.home_address = entered_home_address
-        if entered_ecd_name:
-            patient.ecd_name = entered_ecd_name
-        if entered_ecd_contact_number:
-            patient.ecd_contact_number = entered_ecd_contact_number
+        patient.firstname = firstname
+        patient.lastname = lastname
+        patient.contact_number = entered_contact_number
+        patient.home_address = entered_home_address
+        patient.ecd_name = entered_ecd_name
+        patient.ecd_contact_number = entered_ecd_contact_number
 
         # Commit changes to the database
         db.session.commit()
@@ -1607,8 +1620,6 @@ def survey(doctor_id):
     # If the form is not yet submitted, render the survey form
     return render_template('SUSForm.html', form=form, doctor=doctor, previous_response=previous_response, sus_score=sus_score)
 
-
-
 @bp.route('/account', methods=['GET', 'POST'])
 @login_required
 def account():
@@ -1721,7 +1732,6 @@ def account():
                             form=form,
                             show_return_button=True, 
                             return_url=url_for('main.doctor_dashboard'))
-
 
 @bp.route('/admin_dashboard')
 @login_required

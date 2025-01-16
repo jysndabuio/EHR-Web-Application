@@ -900,7 +900,6 @@ class Vitals(UserMixin, db.Model):
             {"code": "8302-2", "display": "Height"},           # LOINC code for Height
             {"code": "39156-5", "display": "Body Mass Index (BMI)"}  # LOINC code for BMI
         ]
-
 class LabScanGroup(db.Model):
     __tablename__ = 'lab_scan_groups'
 
