@@ -1101,6 +1101,16 @@
                                                 </select>
                                             </div>
 
+                                            <!-- Code -->
+                                            <div class="form-group mb-3">
+                                                <label for="code" class="form-label">Code</label>
+                                                <select class="form-control" id="code" name="code" required>
+                                                    {% for code, display in medicalhistoryform.code.choices %}
+                                                    <option value="{{ code }}">{{ display }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+
                                             <!-- Onset date -->
                                             <div class="form-group mb-3">
                                                 <label for="onset_date" class="form-label">Onset Date</label>
@@ -1111,16 +1121,6 @@
                                             <div class="form-group mb-3">
                                                 <label for="abatement_date" class="form-label">Abatement Date</label>
                                                 <input type="date" class="form-control" id="abatement_date" name="abatement_date" required>
-                                            </div>
-
-                                            <!-- Code -->
-                                            <div class="form-group mb-3">
-                                                <label for="code" class="form-label">Code</label>
-                                                <select class="form-control" id="code" name="code" required>
-                                                    {% for code, display in medicalhistoryform.code.choices %}
-                                                    <option value="{{ code }}">{{ display }}</option>
-                                                    {% endfor %}
-                                                </select>
                                             </div>
 
                                             <!-- Note -->

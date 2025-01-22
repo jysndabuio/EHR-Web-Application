@@ -251,7 +251,7 @@ class MedicalHistoryForm(FlaskForm):
     clinical_status = SelectField('Clinical Status', choices=[], validators=[DataRequired()])
     verification_status = SelectField('Verification Status', choices=[], validators=[DataRequired()])
     category = SelectField('Category', choices=[], validators=[DataRequired()])
-    code = StringField('Condition Code')
+    code = SelectField('Condition Code', choices=[], validators=[DataRequired()])
     onset_date = DateField('Onset Date', validators=[DataRequired()])
     abatement_date = DateField('Abatement Date', validators=[DataRequired()])
     notes = TextAreaField('Notes', validators=[DataRequired()])
@@ -259,14 +259,10 @@ class MedicalHistoryForm(FlaskForm):
 
     def __init__(self, *args, **kwargs):
         super(MedicalHistoryForm, self).__init__(*args, **kwargs)
-        self.clinical_status.choices = [(
-            status['code'], status['display']) for status in MedicalHistory.get_clinical_status_options()]
-        self.verification_status.choices = [(
-            status['code'], status['display']) for status in MedicalHistory.get_verification_status_options()]
-        self.category.choices = [(
-            category['code'], category['display']) for category in MedicalHistory.get_category_options()]
-        self.code.choices = [(
-            category['code'], category['display']) for category in MedicalHistory.get_code_options()]
+        self.clinical_status.choices = [(status['code'], status['display']) for status in MedicalHistory.get_clinical_status_options()]
+        self.verification_status.choices = [(status['code'], status['display']) for status in MedicalHistory.get_verification_status_options()]
+        self.category.choices = [(category['code'], category['display']) for category in MedicalHistory.get_category_options()]
+        self.code.choices = [(code['code'], code['display']) for code in MedicalHistory.get_code_options()]
 
 class AppointmentForm(FlaskForm):
     id = HiddenField('Appointment ID', validators=[Optional()])

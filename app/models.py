@@ -741,7 +741,7 @@ class MedicalHistory(UserMixin, db.Model):
     clinical_status = db.Column(db.String(50), nullable=False)  # e.g., active, resolved, remission
     verification_status = db.Column(db.String(50), nullable=False)  # e.g., confirmed, provisional
     category = db.Column(db.String(50), nullable=False)  # e.g., problem-list-item, encounter-diagnosis
-    code = db.Column(db.String(100), nullable=True)  # Condition code (e.g., SNOMED-CT or ICD-10)
+    code = db.Column(db.String(100), nullable=False)  # Condition code (e.g., SNOMED-CT or ICD-10)
     onset_date = db.Column(db.Date, nullable=False)  # When the condition started
     abatement_date = db.Column(db.Date, nullable=False)  # When the condition ended (if resolved)
     notes = db.Column(db.Text, nullable=False)

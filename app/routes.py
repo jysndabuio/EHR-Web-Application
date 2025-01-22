@@ -65,6 +65,9 @@ def login():
 
     return render_template('login.html', role=role)
 
+#When presented and registration fails.
+#No error handling for duplicate username or emails. 
+#username and email are unique. 
 @bp.route('/register', methods=['GET', 'POST'])
 def register():
     form = RegisterForm()
@@ -230,12 +233,6 @@ def view_patient(patient_id):
 
     """
 
-    # Initialize the immunization form with dynamic choices
-    #immunizationform = ImmunizationForm(obj=patient.immunizations)
-    #immunizationform.vaccine_code.choices = [(item["code"], item["display"]) for item in Immunization.get_vaccine_codes()]
-    #immunizationform.status.choices = [(item["code"], item["display"]) for item in Immunization.get_status_codes()]
-    #immunizationform.site.choices = [(item["code"], item["display"]) for item in Immunization.get_site_options()]
-    #immunizationform.route.choices = [(item["code"], item["display"]) for item in Immunization.get_route_options()]
     immunizationform = ImmunizationForm()
     medicationform = MedicationStatementForm()
     allergyform = AllergyIntoleranceForm()
