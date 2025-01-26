@@ -5,24 +5,13 @@ from datetime import datetime
 from .models import User, UserEducation,LabScan, LabScanGroup, AdditionalDocument, DoctorPatient, Patient, Visit, Appointment, SurveyResponse, Vitals, AllergyIntolerance, Observation,Immunization, Procedure,MedicalHistory, MedicationStatement
 from .forms import SurveyForm,UploadDocumentForm,RequestResetForm, ResetPasswordForm, RegisterForm,MedicationStatementForm,AllergyIntoleranceForm, AddVisitForm, PatientForm, AppointmentForm, VisitForm, ObservationForm, PasswordResetForm, UserUpdateProfile, PatientUpdateForm, ImmunizationForm, ProcedureForm, VitalsForm, MedicalHistoryForm
 from . import db, bcrypt, mail
-from .utils import allowed_file, send_reset_email
+from .utils import allowed_file, send_reset_email, redirect_dashboard
 from .config import Config
 from werkzeug.utils import secure_filename
 import os
 from sqlalchemy.orm import joinedload
 
 bp = Blueprint('main', __name__)
-
-# Define redirect_dashboard directly in routes.py
-def redirect_dashboard(role):
-    """ Helper function to redirect based on role """
-    if role == 'admin':
-        return redirect(url_for('main.admin_dashboard'))
-    elif role == 'doctor':
-        return redirect(url_for('main.doctor_dashboard'))
-    elif role == 'patient':
-        return redirect(url_for('main.patient_dashboard'))
-    return redirect(url_for('main.index'))
 
 @bp.route('/')
 def index():
@@ -65,7 +54,7 @@ def login():
 
     return render_template('login.html', role=role)
 
-#When presented and registration fails.
+#During presentation registration fails.
 #No error handling for duplicate username or emails. 
 #username and email are unique. 
 @bp.route('/register', methods=['GET', 'POST'])
@@ -128,6 +117,7 @@ def doctor_dashboard():
 
     return render_template('doctor_dashboard.html')
 
+#listing all patients according to doctor ID
 @bp.route('/patients', methods=['GET'])
 @login_required
 def doctor_patients():
@@ -137,10 +127,10 @@ def doctor_patients():
 
     # Fetch search and filter parameters
     search_query = request.args.get('search', '').strip()
-    filter_by = request.args.get('filter_by', 'recent')  # Default filter: recent
-    sort_order = request.args.get('sort_order', 'desc')  # Default order: descending
-    age_range = request.args.get('age_range')  # Example: "0-20", "21-40", etc.
-    gender_filter = request.args.get('gender')  # Example: "Male", "Female", "Other"
+    filter_by = request.args.get('filter_by', 'recent') 
+    sort_order = request.args.get('sort_order', 'desc')  
+    age_range = request.args.get('age_range') 
+    gender_filter = request.args.get('gender') 
 
 
     # Fetch patients linked to the logged-in doctor
@@ -194,7 +184,7 @@ def view_patient(patient_id):
         flash('Access unauthorized.', 'danger')
         return redirect(url_for('login'))
     
-    # Check if the patient is associated with the doctor
+    # load partient model and its related tables
     patient = Patient.query.options(
         joinedload(Patient.visits),
         joinedload(Patient.appointments),
@@ -221,8 +211,6 @@ def view_patient(patient_id):
         if patient.appointments else  []
     )
     
-    # Map reason codes to their descriptions
-    #reason_code_map = {item["code"]: item["display"] for item in Visit.get_reason_codes()}
     
     # Sort visits in descending order by visit_date and add reason descriptions
     sorted_visits = sorted(patient.visits, key=lambda visit: visit.visit_date, reverse=True)
@@ -336,9 +324,6 @@ def view_appointments():
     return render_template('view_appointments.html', appointments=sorted_appointments, patient=patient)
 
 
-
-# Add Medical Records Route
-
 @bp.route('/doctor/patient/add', methods=['GET', 'POST'])
 @login_required
 def add_patient():
@@ -362,7 +347,7 @@ def add_patient():
             home_address=patient_form.home_address.data,
         )
         db.session.add(new_patient)
-        db.session.commit()  # Commit to generate new_patient.id
+        db.session.commit()  
 
         # Create association in DoctorPatient
         doctor_patient = DoctorPatient(

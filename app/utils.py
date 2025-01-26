@@ -1,5 +1,5 @@
 from itsdangerous import URLSafeTimedSerializer
-from flask import current_app, url_for
+from flask import current_app, url_for, redirect
 from flask_mail import Message
 from . import mail
 
@@ -16,3 +16,14 @@ def send_reset_email(user):
                 If you did not make this request, simply ignore this email and no changes will be made.
                 '''
     mail.send(msg)
+
+# Define redirect_dashboard directly in routes.py
+def redirect_dashboard(role):
+    """ Helper function to redirect based on role """
+    if role == 'admin':
+        return redirect(url_for('main.admin_dashboard'))
+    elif role == 'doctor':
+        return redirect(url_for('main.doctor_dashboard'))
+    elif role == 'patient':
+        return redirect(url_for('main.patient_dashboard'))
+    return redirect(url_for('main.index'))
